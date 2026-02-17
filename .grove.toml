@@ -1,0 +1,42 @@
+# Grove configuration
+# See: https://github.com/Cleanroom-Labs/grove for full documentation
+
+# Sync groups keep submodules at the same commit across all locations.
+# Each group matches submodule URLs containing the url-match pattern.
+#
+# [sync-groups.<name>]
+# url-match = "<pattern>"                                               # Required
+# standalone-repo = "~/path/to/local/clone"                             # Optional: resolve latest commit locally
+# commit-message = "chore: sync {group} submodule to {sha}"            # Optional: custom commit message
+# allow-drift = ["path/to/submodule"]                                   # Optional: submodules allowed to diverge
+
+# Worktree merge test commands run after each repo is merged.
+# Test command resolution order (highest priority first):
+#   1. test-overrides[repo's relative path]
+#   2. Repo's own .grove.toml test-command
+#   3. Root's test-command
+#   4. No test command — skip testing
+#
+# [worktree-merge]
+# test-command = "npm test"                                             # Default for all repos
+#
+# [worktree-merge.test-overrides]
+# "." = "npm run build"                                                 # Override for root repo
+# "submodule-name" = "make html"                                        # Override for a submodule
+# "skip-this" = ""                                                      # Empty string = skip tests
+
+# Worktree settings applied automatically to `grove worktree add`.
+#
+# [worktree]
+# copy-venv = true                                                      # Copy Python venv (auto-detects location, fixes paths)
+
+# Command aliases map short names to full subcommand strings.
+# Example: `grove wm --status` expands to `grove worktree merge --status`.
+
+[aliases]
+wt = "worktree"
+# wm = "worktree merge"
+# wa = "worktree add"
+# c = "check"
+# s = "sync"
+# p = "push"
