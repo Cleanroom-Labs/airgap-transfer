@@ -93,6 +93,27 @@ Detailed specifications live in the [`docs/`](docs/) submodule:
 | [Test Plan](docs/source/testing/plan.rst) | Test cases and procedures |
 | [Roadmap](docs/source/roadmap.md) | Implementation milestones |
 
+## Development
+
+```bash
+cargo build                    # Debug build
+cargo test                     # Run all tests
+cargo clippy -- -D warnings    # Lint
+cargo fmt --check              # Format check
+```
+
+### License compliance
+
+Dependencies are audited with [cargo-deny](https://github.com/EmbarkStudios/cargo-deny). Install it once, then run locally:
+
+```bash
+cargo install cargo-deny       # One-time install
+cargo deny check               # Run all checks (licenses, advisories, sources)
+cargo deny list                # Show all dependency licenses
+```
+
+Configuration lives in `deny.toml`. CI enforces these checks on every push/PR and runs weekly advisory scans.
+
 ## License
 
 AGPL-3.0
