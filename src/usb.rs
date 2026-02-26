@@ -20,6 +20,7 @@ pub struct DriveInfo {
 ///
 /// Works for any path — USB drives, local disks, network mounts, etc.
 /// This is the primary capacity check used by the pack command.
+#[allow(clippy::unnecessary_cast)] // f_bavail/f_frsize types differ across platforms
 pub fn get_available_space(path: &Path) -> Result<u64> {
     #[cfg(unix)]
     {

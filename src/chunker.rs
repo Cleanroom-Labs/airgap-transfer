@@ -104,7 +104,7 @@ pub fn pack_to_chunks_with_callback(
             let header_size = 512u64; // tar header is always 512 bytes
             current_chunk_bytes += header_size;
             current_chunk_bytes += file_size;
-            let remainder = (file_size % 512) as u64;
+            let remainder = file_size % 512;
             if remainder > 0 {
                 current_chunk_bytes += 512 - remainder;
             }
