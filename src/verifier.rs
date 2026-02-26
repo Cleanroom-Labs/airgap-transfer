@@ -163,7 +163,7 @@ mod tests {
 
     /// TC-INT-002: Computed checksum matches expected value.
     #[test]
-    fn verify_checksum_match() {
+    fn compute_checksum_match() {
         let dir = tempfile::tempdir().unwrap();
         let path = dir.path().join("test.bin");
         std::fs::write(&path, b"hello world").unwrap();
@@ -175,7 +175,7 @@ mod tests {
 
     /// TC-INT-003: Detect corrupted data (checksum mismatch).
     #[test]
-    fn verify_checksum_mismatch() {
+    fn compute_checksum_mismatch() {
         let dir = tempfile::tempdir().unwrap();
         let path = dir.path().join("test.bin");
         std::fs::write(&path, b"hello world").unwrap();
