@@ -111,6 +111,10 @@ airgap-transfer list <chunk-location>
 | Linux | `/media/$USER/*` or `/mnt/*` | `sync` syscall |
 | Windows | DriveInfo API via WinAPI | `FlushFileBuffers` API |
 
+## Debugging
+
+When encountering bugs or test failures, investigate the root cause before attempting fixes. Do not cycle through surface-level patches — read the relevant code, trace the execution path, and identify the actual cause before proposing changes.
+
 ## Documentation
 
 Full specifications are in the `docs/` submodule (Sphinx project):
