@@ -16,12 +16,10 @@ pub fn run(args: &UnpackArgs) -> Result<()> {
 
     // Overwrite protection: warn if destination is non-empty
     if dest.exists() && dest.read_dir()?.next().is_some() && !args.force {
-        eprintln!(
-            "{} Destination {} is not empty. Use --force to overwrite.",
-            "!".red().bold(),
+        return Err(AirgapError::UserAbort(format!(
+            "destination {} is not empty. Use --force to overwrite.",
             dest.display()
-        );
-        return Err(AirgapError::UserAbort);
+        )));
     }
 
     // Load manifest
@@ -55,13 +53,12 @@ pub fn run(args: &UnpackArgs) -> Result<()> {
             TransferProgress::new_items(manifest.chunk_count as u64, args.verbose);
         for chunk in &manifest.chunks {
             let chunk_path = source.join(&chunk.filename);
-            let valid =
-                verifier::verify_checksum(&chunk_path, &chunk.checksum, algorithm.as_ref())?;
-            if !valid {
+            let actual = verifier::compute_checksum(&chunk_path, algorithm.as_ref())?;
+            if actual != chunk.checksum {
                 return Err(AirgapError::Checksum {
                     path: chunk_path,
                     expected: chunk.checksum.clone(),
-                    actual: "mismatch".to_string(),
+                    actual,
                 });
             }
             verify_progress.advance(1);
@@ -104,4 +101,41 @@ pub fn run(args: &UnpackArgs) -> Result<()> {
     }
 
     Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use crate::UnpackArgs;
+    use crate::error::AirgapError;
+
+    /// TC-SAF-001: Unpack aborts when destination is non-empty.
+    #[test]
+    fn unpack_aborts_when_dest_not_empty() {
+        let source_dir = tempfile::tempdir().unwrap();
+        let dest_dir = tempfile::tempdir().unwrap();
+
+        // Create a file in dest to make it non-empty
+        std::fs::write(dest_dir.path().join("existing.txt"), b"content").unwrap();
+
+        // Create a minimal manifest in source so the command gets past loading
+        // (it checks dest before loading manifest, so this is needed)
+        let args = UnpackArgs {
+            source: source_dir.path().to_path_buf(),
+            dest: dest_dir.path().to_path_buf(),
+            no_verify: false,
+            keep_chunks: false,
+            force: false,
+            verbose: false,
+        };
+
+        let result = super::run(&args);
+        assert!(result.is_err());
+        match result.unwrap_err() {
+            AirgapError::UserAbort(msg) => {
+                assert!(msg.contains("--force"), "error should suggest --force");
+                assert!(msg.contains("not empty"));
+            }
+            other => panic!("expected UserAbort, got: {other}"),
+        }
+    }
 }
