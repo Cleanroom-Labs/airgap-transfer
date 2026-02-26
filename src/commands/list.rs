@@ -27,10 +27,18 @@ pub fn run(chunk_location: &Path) -> Result<()> {
     );
     println!();
 
+    // Count present chunks up front
+    let present_count = manifest
+        .chunks
+        .iter()
+        .filter(|c| chunk_location.join(&c.filename).exists())
+        .count();
+    let missing_count = manifest.chunk_count - present_count;
+
     // Summary
     println!(
-        "Chunks: {}/{} | Total: {} | Chunk size: {} | Hash: {}",
-        manifest.chunk_count,
+        "Chunks: {}/{} present | Total: {} | Chunk size: {} | Hash: {}",
+        present_count,
         manifest.chunk_count,
         format_bytes(manifest.total_size_bytes),
         format_bytes(manifest.chunk_size_bytes),
@@ -45,24 +53,20 @@ pub fn run(chunk_location: &Path) -> Result<()> {
     );
 
     // Chunk rows
-    let mut missing_count = 0;
     for chunk in &manifest.chunks {
-        let chunk_path = chunk_location.join(&chunk.filename);
-        let present = chunk_path.exists();
-        if !present {
-            missing_count += 1;
-        }
+        let present = chunk_location.join(&chunk.filename).exists();
 
+        // Pad before colorizing so ANSI escape codes don't break alignment
         let status_display = if !present {
-            "MISSING".red().bold().to_string()
+            format!("{:<10}", "MISSING").red().bold().to_string()
         } else {
-            format!("{}", chunk.status)
+            format!("{:<10}", chunk.status)
         };
 
         let checksum_display = truncate_checksum(&chunk.checksum);
 
         println!(
-            "  {:<4} {:<18} {:<14} {:<10} {}",
+            "  {:<4} {:<18} {:<14} {} {}",
             chunk.index,
             chunk.filename,
             format_bytes(chunk.size_bytes),
