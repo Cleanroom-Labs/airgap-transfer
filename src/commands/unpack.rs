@@ -5,7 +5,7 @@ use crate::UnpackArgs;
 use crate::chunker;
 use crate::error::{AirgapError, Result};
 use crate::manifest::{MANIFEST_FILENAME, Manifest};
-use crate::progress::TransferProgress;
+use crate::progress::{TransferProgress, format_bytes};
 use crate::usb;
 use crate::verifier;
 
@@ -13,6 +13,16 @@ use crate::verifier;
 pub fn run(args: &UnpackArgs) -> Result<()> {
     let source = &args.source;
     let dest = &args.dest;
+
+    // Overwrite protection: warn if destination is non-empty
+    if dest.exists() && dest.read_dir()?.next().is_some() && !args.force {
+        eprintln!(
+            "{} Destination {} is not empty. Use --force to overwrite.",
+            "!".red().bold(),
+            dest.display()
+        );
+        return Err(AirgapError::UserAbort);
+    }
 
     // Load manifest
     let manifest_path = source.join(MANIFEST_FILENAME);
@@ -62,9 +72,9 @@ pub fn run(args: &UnpackArgs) -> Result<()> {
 
     // Extract chunks
     println!(
-        "{} Unpacking {} bytes to {}...",
+        "{} Unpacking {} to {}...",
         "→".green().bold(),
-        manifest.total_size_bytes,
+        format_bytes(manifest.total_size_bytes),
         dest.display()
     );
     let progress = TransferProgress::new(manifest.total_size_bytes, args.verbose);

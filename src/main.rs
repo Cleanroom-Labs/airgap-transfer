@@ -63,6 +63,10 @@ pub struct PackArgs {
     #[arg(long)]
     pub no_verify: bool,
 
+    /// Overwrite existing chunks and manifest at destination.
+    #[arg(long)]
+    pub force: bool,
+
     /// Show detailed progress for each chunk.
     #[arg(long, short)]
     pub verbose: bool,
@@ -84,6 +88,10 @@ pub struct UnpackArgs {
     /// Keep chunk files after successful unpack.
     #[arg(long)]
     pub keep_chunks: bool,
+
+    /// Overwrite existing files at destination.
+    #[arg(long)]
+    pub force: bool,
 
     /// Show detailed progress.
     #[arg(long, short)]

@@ -9,7 +9,6 @@ pub type Result<T> = std::result::Result<T, AirgapError>;
 
 /// Top-level error type for all AirGap Transfer operations.
 #[derive(Debug, thiserror::Error)]
-#[allow(dead_code)] // Variants used in later phases (Unpack, List).
 pub enum AirgapError {
     /// Wraps I/O errors from file and USB operations.
     #[error("I/O error: {0}")]
