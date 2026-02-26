@@ -5,9 +5,9 @@ use colored::Colorize;
 
 use crate::PackArgs;
 use crate::chunker;
-use crate::error::Result;
+use crate::error::{AirgapError, Result};
 use crate::manifest::{MANIFEST_FILENAME, Manifest};
-use crate::progress::TransferProgress;
+use crate::progress::{TransferProgress, format_bytes};
 use crate::usb;
 use crate::verifier;
 
@@ -15,6 +15,24 @@ use crate::verifier;
 pub fn run(args: &PackArgs) -> Result<()> {
     let source = &args.source;
     let dest = &args.dest;
+
+    // Validate source exists
+    if !source.exists() {
+        return Err(AirgapError::InvalidPath(format!(
+            "source does not exist: {}",
+            source.display()
+        )));
+    }
+
+    // Check for existing manifest (overwrite protection)
+    let manifest_path = dest.join(MANIFEST_FILENAME);
+    if manifest_path.exists() && !args.force {
+        eprintln!(
+            "{} Destination already contains a manifest. Use --force to overwrite.",
+            "!".red().bold()
+        );
+        return Err(AirgapError::UserAbort);
+    }
 
     // Resolve the hash algorithm
     let algorithm = verifier::algorithm_from_name(&args.hash_algorithm)?;
@@ -41,7 +59,7 @@ pub fn run(args: &PackArgs) -> Result<()> {
     };
     let available = usb::get_available_space(dest_parent)?;
     if available < total_size {
-        return Err(crate::error::AirgapError::InsufficientSpace {
+        return Err(AirgapError::InsufficientSpace {
             needed: total_size,
             available,
         });
@@ -59,11 +77,11 @@ pub fn run(args: &PackArgs) -> Result<()> {
     let progress = TransferProgress::new(total_size, args.verbose);
 
     println!(
-        "{} Packing {} ({} bytes) into chunks of {} bytes...",
+        "{} Packing {} ({}) into chunks of {}...",
         "→".green().bold(),
         source.display(),
-        total_size,
-        args.chunk_size
+        format_bytes(total_size),
+        format_bytes(args.chunk_size)
     );
 
     chunker::pack_to_chunks(
@@ -87,7 +105,7 @@ pub fn run(args: &PackArgs) -> Result<()> {
             let valid =
                 verifier::verify_checksum(&chunk_path, &chunk.checksum, algorithm.as_ref())?;
             if !valid {
-                return Err(crate::error::AirgapError::Checksum {
+                return Err(AirgapError::Checksum {
                     path: chunk_path,
                     expected: chunk.checksum.clone(),
                     actual: "mismatch".to_string(),
@@ -100,7 +118,6 @@ pub fn run(args: &PackArgs) -> Result<()> {
     }
 
     // Save manifest
-    let manifest_path = dest.join(MANIFEST_FILENAME);
     manifest.save(&manifest_path)?;
     println!(
         "{} Manifest saved to {}",
@@ -131,8 +148,8 @@ fn print_dry_run(source: &Path, dest: &Path, total_size: u64, chunk_size: u64, a
     println!("{} Dry run — no files will be written", "ℹ".blue().bold());
     println!("  Source:     {}", source.display());
     println!("  Dest:       {}", dest.display());
-    println!("  Total size: {} bytes", total_size);
-    println!("  Chunk size: {} bytes", chunk_size);
+    println!("  Total size: {}", format_bytes(total_size));
+    println!("  Chunk size: {}", format_bytes(chunk_size));
     println!("  Chunks:     {}", chunk_count);
     println!("  Algorithm:  {}", algorithm);
     for i in 0..chunk_count {
