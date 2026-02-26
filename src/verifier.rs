@@ -96,14 +96,6 @@ pub fn compute_checksum(path: &Path, algorithm: &dyn HashAlgorithm) -> Result<St
     Ok(writer.finalize())
 }
 
-/// Verify that a file's checksum matches an expected value.
-///
-/// Returns `Ok(true)` on match, `Ok(false)` on mismatch.
-pub fn verify_checksum(path: &Path, expected: &str, algorithm: &dyn HashAlgorithm) -> Result<bool> {
-    let actual = compute_checksum(path, algorithm)?;
-    Ok(actual == expected)
-}
-
 // ── Tests ───────────────────────────────────────────────────────────────
 
 #[cfg(test)]
@@ -169,7 +161,7 @@ mod tests {
         );
     }
 
-    /// TC-INT-002: Verify checksum returns true on match.
+    /// TC-INT-002: Computed checksum matches expected value.
     #[test]
     fn verify_checksum_match() {
         let dir = tempfile::tempdir().unwrap();
@@ -177,7 +169,8 @@ mod tests {
         std::fs::write(&path, b"hello world").unwrap();
 
         let expected = "sha256:b94d27b9934d3e08a52e52d7da7dabfac484efe37a5380ee9088f7ace2efcde9";
-        assert!(verify_checksum(&path, expected, &Sha256Algorithm).unwrap());
+        let actual = compute_checksum(&path, &Sha256Algorithm).unwrap();
+        assert_eq!(actual, expected);
     }
 
     /// TC-INT-003: Detect corrupted data (checksum mismatch).
@@ -187,9 +180,9 @@ mod tests {
         let path = dir.path().join("test.bin");
         std::fs::write(&path, b"hello world").unwrap();
 
-        // Flip last char of the expected digest
         let wrong = "sha256:b94d27b9934d3e08a52e52d7da7dabfac484efe37a5380ee9088f7ace2efcde0";
-        assert!(!verify_checksum(&path, wrong, &Sha256Algorithm).unwrap());
+        let actual = compute_checksum(&path, &Sha256Algorithm).unwrap();
+        assert_ne!(actual, wrong);
     }
 
     /// TC-INT-004: Verify integrity after content modification.
@@ -208,7 +201,8 @@ mod tests {
         drop(f);
 
         // Checksum should no longer match
-        assert!(!verify_checksum(&path, &original_checksum, &Sha256Algorithm).unwrap());
+        let actual = compute_checksum(&path, &Sha256Algorithm).unwrap();
+        assert_ne!(actual, original_checksum);
     }
 
     /// TC-CRA-003 / TC-CRA-004: Algorithm name appears in digest prefix.

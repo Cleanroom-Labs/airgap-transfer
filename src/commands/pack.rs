@@ -27,11 +27,9 @@ pub fn run(args: &PackArgs) -> Result<()> {
     // Check for existing manifest (overwrite protection)
     let manifest_path = dest.join(MANIFEST_FILENAME);
     if manifest_path.exists() && !args.force {
-        eprintln!(
-            "{} Destination already contains a manifest. Use --force to overwrite.",
-            "!".red().bold()
-        );
-        return Err(AirgapError::UserAbort);
+        return Err(AirgapError::UserAbort(
+            "destination already contains a manifest. Use --force to overwrite.".to_string(),
+        ));
     }
 
     // Resolve the hash algorithm
@@ -102,13 +100,12 @@ pub fn run(args: &PackArgs) -> Result<()> {
             TransferProgress::new_items(manifest.chunk_count as u64, args.verbose);
         for chunk in &manifest.chunks {
             let chunk_path = dest.join(&chunk.filename);
-            let valid =
-                verifier::verify_checksum(&chunk_path, &chunk.checksum, algorithm.as_ref())?;
-            if !valid {
+            let actual = verifier::compute_checksum(&chunk_path, algorithm.as_ref())?;
+            if actual != chunk.checksum {
                 return Err(AirgapError::Checksum {
                     path: chunk_path,
                     expected: chunk.checksum.clone(),
-                    actual: "mismatch".to_string(),
+                    actual,
                 });
             }
             verify_progress.advance(1);
@@ -154,5 +151,105 @@ fn print_dry_run(source: &Path, dest: &Path, total_size: u64, chunk_size: u64, a
     println!("  Algorithm:  {}", algorithm);
     for i in 0..chunk_count {
         println!("    chunk_{:03}.tar", i);
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use std::path::PathBuf;
+
+    use crate::PackArgs;
+    use crate::error::AirgapError;
+    use crate::manifest::{MANIFEST_FILENAME, Manifest};
+
+    /// TC-SAF-001: Pack aborts when destination has existing manifest.
+    #[test]
+    fn pack_aborts_without_force() {
+        let src_dir = tempfile::tempdir().unwrap();
+        let dest_dir = tempfile::tempdir().unwrap();
+
+        // Create source file
+        std::fs::write(src_dir.path().join("test.txt"), b"data").unwrap();
+
+        // Create existing manifest at destination
+        let mut manifest = Manifest::new_pack("/dummy", 100, 100, "sha256");
+        manifest
+            .save(&dest_dir.path().join(MANIFEST_FILENAME))
+            .unwrap();
+
+        let args = PackArgs {
+            source: src_dir.path().join("test.txt"),
+            dest: dest_dir.path().to_path_buf(),
+            chunk_size: 1_000_000,
+            hash_algorithm: "sha256".to_string(),
+            dry_run: false,
+            no_verify: false,
+            force: false,
+            verbose: false,
+        };
+
+        let result = super::run(&args);
+        assert!(result.is_err());
+        match result.unwrap_err() {
+            AirgapError::UserAbort(msg) => {
+                assert!(msg.contains("--force"), "error should suggest --force");
+            }
+            other => panic!("expected UserAbort, got: {other}"),
+        }
+    }
+
+    /// TC-SAF-005: Pack succeeds with --force over existing manifest.
+    #[test]
+    fn pack_succeeds_with_force() {
+        let src_dir = tempfile::tempdir().unwrap();
+        let dest_dir = tempfile::tempdir().unwrap();
+
+        // Create source file
+        std::fs::write(src_dir.path().join("test.txt"), b"data").unwrap();
+
+        // Create existing manifest at destination
+        let mut manifest = Manifest::new_pack("/dummy", 100, 100, "sha256");
+        manifest
+            .save(&dest_dir.path().join(MANIFEST_FILENAME))
+            .unwrap();
+
+        let args = PackArgs {
+            source: src_dir.path().join("test.txt"),
+            dest: dest_dir.path().to_path_buf(),
+            chunk_size: 1_000_000,
+            hash_algorithm: "sha256".to_string(),
+            dry_run: false,
+            no_verify: false,
+            force: true,
+            verbose: false,
+        };
+
+        assert!(super::run(&args).is_ok());
+    }
+
+    /// Pack aborts when source does not exist.
+    #[test]
+    fn pack_rejects_missing_source() {
+        let dest_dir = tempfile::tempdir().unwrap();
+
+        let args = PackArgs {
+            source: PathBuf::from("/nonexistent/file"),
+            dest: dest_dir.path().to_path_buf(),
+            chunk_size: 1_000_000,
+            hash_algorithm: "sha256".to_string(),
+            dry_run: false,
+            no_verify: false,
+            force: false,
+            verbose: false,
+        };
+
+        let result = super::run(&args);
+        assert!(result.is_err());
+        match result.unwrap_err() {
+            AirgapError::InvalidPath(msg) => {
+                assert!(msg.contains("does not exist"));
+            }
+            other => panic!("expected InvalidPath, got: {other}"),
+        }
     }
 }

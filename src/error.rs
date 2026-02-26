@@ -42,9 +42,9 @@ pub enum AirgapError {
     #[error("invalid path: {0}")]
     InvalidPath(String),
 
-    /// The user cancelled the operation (e.g. declined an overwrite prompt).
-    #[error("operation cancelled by user")]
-    UserAbort,
+    /// The operation was blocked by a safety check (e.g. overwrite protection).
+    #[error("{0}")]
+    UserAbort(String),
 
     /// An unsupported hash algorithm was requested.
     #[error("unsupported hash algorithm: {0}")]

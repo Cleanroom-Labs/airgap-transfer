@@ -35,6 +35,10 @@ enum Commands {
     List {
         /// Directory containing the manifest and chunks.
         chunk_location: PathBuf,
+
+        /// Compute checksums for present chunks and verify against manifest.
+        #[arg(long)]
+        verify: bool,
     },
 }
 
@@ -104,7 +108,10 @@ fn main() {
     let result = match cli.command {
         Commands::Pack(args) => commands::pack::run(&args),
         Commands::Unpack(args) => commands::unpack::run(&args),
-        Commands::List { chunk_location } => commands::list::run(&chunk_location),
+        Commands::List {
+            chunk_location,
+            verify,
+        } => commands::list::run(&chunk_location, verify),
     };
 
     if let Err(e) = result {

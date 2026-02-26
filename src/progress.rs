@@ -68,8 +68,11 @@ pub fn format_bytes(bytes: u64) -> String {
     const KB: u64 = 1_024;
     const MB: u64 = 1_048_576;
     const GB: u64 = 1_073_741_824;
+    const TB: u64 = 1_099_511_627_776;
 
-    if bytes >= GB {
+    if bytes >= TB {
+        format!("{:.2} TB", bytes as f64 / TB as f64)
+    } else if bytes >= GB {
         format!("{:.2} GB", bytes as f64 / GB as f64)
     } else if bytes >= MB {
         format!("{:.2} MB", bytes as f64 / MB as f64)
@@ -92,5 +95,7 @@ mod tests {
         assert_eq!(format_bytes(1_048_576), "1.00 MB");
         assert_eq!(format_bytes(1_073_741_824), "1.00 GB");
         assert_eq!(format_bytes(1_610_612_736), "1.50 GB");
+        assert_eq!(format_bytes(1_099_511_627_776), "1.00 TB");
+        assert_eq!(format_bytes(1_649_267_441_664), "1.50 TB");
     }
 }

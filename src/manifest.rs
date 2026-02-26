@@ -139,6 +139,15 @@ impl Manifest {
 
 // ── Display ─────────────────────────────────────────────────────────────
 
+impl std::fmt::Display for Operation {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Operation::Pack => write!(f, "pack"),
+            Operation::Unpack => write!(f, "unpack"),
+        }
+    }
+}
+
 impl std::fmt::Display for ChunkStatus {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
