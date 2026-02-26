@@ -45,10 +45,18 @@ cargo build --release --offline # Air-gap build (after cargo vendor)
 cargo test                     # Run all tests
 cargo clippy -- -D warnings    # Lint (must pass with zero warnings)
 cargo fmt --check              # Format check
-cargo deny check               # License + advisory audit (requires: cargo install cargo-deny)
+cargo deny check               # License, advisory, source, and duplicate dep audit (requires: cargo install cargo-deny)
+cargo auditable build --release # Release build with embedded dep metadata (requires: cargo install cargo-auditable)
+cargo audit bin target/release/airgap-transfer  # Scan built binary for advisories (requires: cargo install cargo-audit)
 ```
 
-`deny.toml` configures license allowlisting (AGPL-compatible only), security advisory checks, and source restrictions (crates.io only). CI runs these checks on every push/PR and weekly for new advisories.
+### Supply-chain security
+
+Three tools provide layered dependency assurance:
+
+- **cargo-deny** (`deny.toml`) — Build-time gate: license allowlisting (AGPL-compatible only), RustSec advisory checks, source restrictions (crates.io only), duplicate version detection. CI runs on every push/PR and weekly for new advisories.
+- **cargo-auditable** — Embeds a compressed dependency manifest (~4KB) into the compiled binary. Enables offline auditing of deployed binaries without source access.
+- **cargo-audit** — Scans Cargo.lock or compiled binaries (`cargo audit bin`) against RustSec advisories. Also offers `cargo audit fix` for auto-resolving advisories.
 
 ## Code Quality Standards
 
