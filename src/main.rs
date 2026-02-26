@@ -13,7 +13,7 @@ mod verifier;
 use std::path::PathBuf;
 use std::process;
 
-use clap::{Parser, Subcommand};
+use clap::{Args, Parser, Subcommand};
 
 /// Large file transfer utility for air-gapped environments.
 #[derive(Parser)]
@@ -26,54 +26,10 @@ struct Cli {
 #[derive(Subcommand)]
 enum Commands {
     /// Split source files into chunks for transfer across an air gap.
-    Pack {
-        /// Source file or directory to pack.
-        source: PathBuf,
-
-        /// Destination directory for chunks and manifest.
-        dest: PathBuf,
-
-        /// Target size per chunk (bytes). Accepts suffixes: KB, MB, GB.
-        #[arg(long, default_value = "1073741824", value_parser = parse_size)]
-        chunk_size: u64,
-
-        /// Hash algorithm for chunk verification.
-        #[arg(long, default_value = "sha256")]
-        hash_algorithm: String,
-
-        /// Preview the operation without writing any files.
-        #[arg(long)]
-        dry_run: bool,
-
-        /// Skip checksum verification after packing.
-        #[arg(long)]
-        no_verify: bool,
-
-        /// Show detailed progress for each chunk.
-        #[arg(long, short)]
-        verbose: bool,
-    },
+    Pack(PackArgs),
 
     /// Reconstruct files from chunks.
-    Unpack {
-        /// Directory containing chunks and manifest.
-        source: PathBuf,
-
-        /// Destination directory for reconstructed files.
-        dest: PathBuf,
-
-        /// Skip checksum verification during unpack.
-        #[arg(long)]
-        no_verify: bool,
-
-        /// Keep chunk files after successful unpack.
-        #[arg(long)]
-        keep_chunks: bool,
-
-        /// Show detailed progress.
-        #[arg(long, short)]
-        verbose: bool,
-    },
+    Unpack(UnpackArgs),
 
     /// Display chunk inventory from a manifest.
     List {
@@ -82,36 +38,64 @@ enum Commands {
     },
 }
 
+/// Arguments for the pack subcommand.
+#[derive(Args)]
+pub struct PackArgs {
+    /// Source file or directory to pack.
+    pub source: PathBuf,
+
+    /// Destination directory for chunks and manifest.
+    pub dest: PathBuf,
+
+    /// Target size per chunk (bytes). Accepts suffixes: KB, MB, GB.
+    #[arg(long, default_value = "1073741824", value_parser = parse_size)]
+    pub chunk_size: u64,
+
+    /// Hash algorithm for chunk verification.
+    #[arg(long, default_value = "sha256")]
+    pub hash_algorithm: String,
+
+    /// Preview the operation without writing any files.
+    #[arg(long)]
+    pub dry_run: bool,
+
+    /// Skip checksum verification after packing.
+    #[arg(long)]
+    pub no_verify: bool,
+
+    /// Show detailed progress for each chunk.
+    #[arg(long, short)]
+    pub verbose: bool,
+}
+
+/// Arguments for the unpack subcommand.
+#[derive(Args)]
+pub struct UnpackArgs {
+    /// Directory containing chunks and manifest.
+    pub source: PathBuf,
+
+    /// Destination directory for reconstructed files.
+    pub dest: PathBuf,
+
+    /// Skip checksum verification during unpack.
+    #[arg(long)]
+    pub no_verify: bool,
+
+    /// Keep chunk files after successful unpack.
+    #[arg(long)]
+    pub keep_chunks: bool,
+
+    /// Show detailed progress.
+    #[arg(long, short)]
+    pub verbose: bool,
+}
+
 fn main() {
     let cli = Cli::parse();
 
     let result = match cli.command {
-        Commands::Pack {
-            source,
-            dest,
-            chunk_size,
-            hash_algorithm,
-            dry_run,
-            no_verify,
-            verbose,
-        } => commands::pack::run(
-            &source,
-            &dest,
-            chunk_size,
-            &hash_algorithm,
-            dry_run,
-            no_verify,
-            verbose,
-        ),
-
-        Commands::Unpack {
-            source,
-            dest,
-            no_verify,
-            keep_chunks,
-            verbose,
-        } => commands::unpack::run(&source, &dest, no_verify, keep_chunks, verbose),
-
+        Commands::Pack(args) => commands::pack::run(&args),
+        Commands::Unpack(args) => commands::unpack::run(&args),
         Commands::List { chunk_location } => commands::list::run(&chunk_location),
     };
 

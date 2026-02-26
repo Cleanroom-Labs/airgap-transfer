@@ -3,6 +3,7 @@ use std::path::Path;
 
 use colored::Colorize;
 
+use crate::PackArgs;
 use crate::chunker;
 use crate::error::Result;
 use crate::manifest::{MANIFEST_FILENAME, Manifest};
@@ -11,29 +12,30 @@ use crate::usb;
 use crate::verifier;
 
 /// Execute the pack operation.
-pub fn run(
-    source: &Path,
-    dest: &Path,
-    chunk_size: u64,
-    hash_algorithm: &str,
-    dry_run: bool,
-    no_verify: bool,
-    verbose: bool,
-) -> Result<()> {
+pub fn run(args: &PackArgs) -> Result<()> {
+    let source = &args.source;
+    let dest = &args.dest;
+
     // Resolve the hash algorithm
-    let algorithm = verifier::algorithm_from_name(hash_algorithm)?;
+    let algorithm = verifier::algorithm_from_name(&args.hash_algorithm)?;
 
     // Calculate total size
     let total_size = chunker::calculate_total_size(source)?;
 
-    if dry_run {
-        print_dry_run(source, dest, total_size, chunk_size, hash_algorithm);
+    if args.dry_run {
+        print_dry_run(
+            source,
+            dest,
+            total_size,
+            args.chunk_size,
+            &args.hash_algorithm,
+        );
         return Ok(());
     }
 
     // Check available space
     let dest_parent = if dest.exists() {
-        dest
+        dest.as_path()
     } else {
         dest.parent().unwrap_or(dest)
     };
@@ -49,25 +51,25 @@ pub fn run(
     let mut manifest = Manifest::new_pack(
         &source.to_string_lossy(),
         total_size,
-        chunk_size,
+        args.chunk_size,
         algorithm.name(),
     );
 
     // Pack with progress
-    let progress = TransferProgress::new(total_size, verbose);
+    let progress = TransferProgress::new(total_size, args.verbose);
 
     println!(
         "{} Packing {} ({} bytes) into chunks of {} bytes...",
         "→".green().bold(),
         source.display(),
         total_size,
-        chunk_size
+        args.chunk_size
     );
 
     chunker::pack_to_chunks(
         source,
         dest,
-        chunk_size,
+        args.chunk_size,
         algorithm.as_ref(),
         &mut manifest,
         &progress,
@@ -76,9 +78,10 @@ pub fn run(
     progress.finish("packed");
 
     // Verify checksums if requested
-    if !no_verify {
+    if !args.no_verify {
         println!("{} Verifying chunk checksums...", "→".green().bold());
-        let verify_progress = TransferProgress::new_items(manifest.chunk_count as u64, verbose);
+        let verify_progress =
+            TransferProgress::new_items(manifest.chunk_count as u64, args.verbose);
         for chunk in &manifest.chunks {
             let chunk_path = dest.join(&chunk.filename);
             let valid =
