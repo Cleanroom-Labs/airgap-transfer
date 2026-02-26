@@ -104,22 +104,26 @@ cargo fmt --check              # Format check
 
 ### Supply-chain security
 
-Three tools provide layered dependency assurance:
+Five tools provide layered dependency assurance:
 
 | Tool | Purpose | Install |
 |------|---------|---------|
 | [cargo-deny](https://github.com/EmbarkStudios/cargo-deny) | License compliance, advisory checks, source restrictions, duplicate dep detection | `cargo install cargo-deny` |
+| [cargo-vet](https://github.com/mozilla/cargo-vet) | Verifies deps have been reviewed by trusted auditors (Mozilla, Google) | `cargo install cargo-vet` |
+| [cargo-crev](https://github.com/crev-dev/cargo-crev) | Decentralized community code reviews with cryptographic signatures | `cargo install cargo-crev` |
 | [cargo-auditable](https://github.com/rust-secure-code/cargo-auditable) | Embeds dependency metadata in compiled binaries for offline auditing | `cargo install cargo-auditable` |
 | [cargo-audit](https://github.com/rustsec/rustsec) | Scans Cargo.lock or built binaries against RustSec advisories | `cargo install cargo-audit` |
 
 ```bash
 cargo deny check                                  # License, advisory, source, and ban checks
 cargo deny list                                    # Show all dependency licenses
+cargo vet                                          # Verify all deps have trusted human audits
+cargo crev crate verify                            # Community trust check
 cargo auditable build --release                    # Release build with embedded dep manifest
 cargo audit bin target/release/airgap-transfer     # Scan built binary for vulnerabilities
 ```
 
-Configuration lives in `deny.toml`. CI enforces cargo-deny on every push/PR (with weekly advisory scans) and builds an auditable release binary.
+Configuration lives in `deny.toml` (cargo-deny) and `supply-chain/` (cargo-vet). CI enforces cargo-deny and cargo-vet on every push/PR (with weekly advisory scans), runs cargo-crev as an advisory check, and builds an auditable release binary.
 
 ## License
 
