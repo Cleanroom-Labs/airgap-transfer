@@ -106,7 +106,6 @@ impl Manifest {
     }
 
     /// Load a manifest from a JSON file.
-    #[allow(dead_code)] // Used by unpack and list commands in later phases.
     pub fn load(path: &Path) -> Result<Self> {
         let data = std::fs::read_to_string(path)?;
         let manifest: Manifest =

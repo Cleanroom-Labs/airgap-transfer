@@ -155,6 +155,37 @@ pub fn pack_to_chunks(
     Ok(())
 }
 
+/// Extract tar chunks back to a destination directory.
+///
+/// Iterates chunks in manifest order, opening each as a tar archive and
+/// extracting all entries to `dest`.  The `tar` crate handles directory
+/// creation and path joining.
+pub fn unpack_from_chunks(
+    source_dir: &Path,
+    dest: &Path,
+    manifest: &Manifest,
+    progress: &TransferProgress,
+) -> Result<()> {
+    fs::create_dir_all(dest)?;
+
+    for chunk in &manifest.chunks {
+        let chunk_path = source_dir.join(&chunk.filename);
+        let file = fs::File::open(&chunk_path)
+            .map_err(|e| AirgapError::ChunkMissing(format!("{}: {e}", chunk.filename)))?;
+
+        let mut archive = tar::Archive::new(file);
+        for entry in archive.entries()? {
+            let mut entry = entry?;
+            entry.unpack_in(dest)?;
+        }
+
+        progress.advance(chunk.size_bytes);
+        progress.verbose_message(&format!("  extracted {}", chunk.filename));
+    }
+
+    Ok(())
+}
+
 /// Calculate total size of all files to be packed (for progress display).
 pub fn calculate_total_size(source: &Path) -> Result<u64> {
     let entries = collect_entries(source)?;
@@ -435,6 +466,154 @@ mod tests {
             &progress,
         );
         assert!(result.is_err());
+    }
+
+    // ── Unpack tests ──────────────────────────────────────────────────
+
+    /// Helper: pack a source into chunks, save manifest, return (chunk_dir, manifest).
+    fn pack_roundtrip(
+        src_dir: &Path,
+        source: &Path,
+        chunk_size: u64,
+    ) -> (tempfile::TempDir, Manifest) {
+        let dest_dir = tempfile::tempdir().unwrap();
+        let total = calculate_total_size(source).unwrap();
+        let mut manifest =
+            Manifest::new_pack(source.to_str().unwrap(), total, chunk_size, "sha256");
+        let progress = TransferProgress::hidden();
+        pack_to_chunks(
+            source,
+            dest_dir.path(),
+            chunk_size,
+            &Sha256Algorithm,
+            &mut manifest,
+            &progress,
+        )
+        .unwrap();
+        let _ = src_dir; // keep alive
+        (dest_dir, manifest)
+    }
+
+    /// TC-UNP-001: Pack then unpack a directory, verify files match originals.
+    #[test]
+    fn unpack_roundtrip_directory() {
+        let src_dir = tempfile::tempdir().unwrap();
+        make_test_file(src_dir.path(), "a.txt", b"File A content");
+        make_test_file(src_dir.path(), "b.txt", b"File B content here");
+        make_test_file(src_dir.path(), "sub/c.txt", b"Nested file C");
+
+        let (chunk_dir, manifest) = pack_roundtrip(src_dir.path(), src_dir.path(), 1_000_000);
+
+        // Unpack to a new directory
+        let unpack_dir = tempfile::tempdir().unwrap();
+        let progress = TransferProgress::hidden();
+        unpack_from_chunks(chunk_dir.path(), unpack_dir.path(), &manifest, &progress).unwrap();
+
+        // Verify file contents match. The tar entries include the source dir name
+        // as a path prefix, so we need to find the files relative to the unpack root.
+        let find_file = |name: &str| -> Vec<u8> {
+            for entry in walkdir(unpack_dir.path()) {
+                if entry.ends_with(name) {
+                    return fs::read(&entry).unwrap();
+                }
+            }
+            panic!("file {name} not found in unpacked output");
+        };
+
+        assert_eq!(find_file("a.txt"), b"File A content");
+        assert_eq!(find_file("b.txt"), b"File B content here");
+        assert_eq!(find_file("c.txt"), b"Nested file C");
+    }
+
+    /// TC-UNP-001 (single file variant): Pack and unpack a single file.
+    #[test]
+    fn unpack_roundtrip_single_file() {
+        let src_dir = tempfile::tempdir().unwrap();
+        let content = b"Hello from the air-gapped world!";
+        make_test_file(src_dir.path(), "hello.txt", content);
+
+        let source = src_dir.path().join("hello.txt");
+        let (chunk_dir, manifest) = pack_roundtrip(src_dir.path(), &source, 1_000_000);
+
+        let unpack_dir = tempfile::tempdir().unwrap();
+        let progress = TransferProgress::hidden();
+        unpack_from_chunks(chunk_dir.path(), unpack_dir.path(), &manifest, &progress).unwrap();
+
+        let find_file = |name: &str| -> Vec<u8> {
+            for entry in walkdir(unpack_dir.path()) {
+                if entry.ends_with(name) {
+                    return fs::read(&entry).unwrap();
+                }
+            }
+            panic!("file {name} not found");
+        };
+
+        assert_eq!(find_file("hello.txt"), content);
+    }
+
+    /// TC-UNP-004: Missing chunk file returns ChunkMissing error.
+    #[test]
+    fn unpack_missing_chunk_errors() {
+        let src_dir = tempfile::tempdir().unwrap();
+        make_test_file(src_dir.path(), "data.txt", b"test");
+
+        let source = src_dir.path().join("data.txt");
+        let (chunk_dir, manifest) = pack_roundtrip(src_dir.path(), &source, 1_000_000);
+
+        // Delete the chunk file
+        fs::remove_file(chunk_dir.path().join("chunk_000.tar")).unwrap();
+
+        let unpack_dir = tempfile::tempdir().unwrap();
+        let progress = TransferProgress::hidden();
+        let result = unpack_from_chunks(chunk_dir.path(), unpack_dir.path(), &manifest, &progress);
+        assert!(result.is_err());
+    }
+
+    /// TC-UNP-001 (multi-chunk): Pack with small chunks, unpack, verify content.
+    #[test]
+    fn unpack_multi_chunk_roundtrip() {
+        let src_dir = tempfile::tempdir().unwrap();
+        let data = vec![0xABu8; 4096];
+        make_test_file(src_dir.path(), "big.bin", &data);
+
+        let source = src_dir.path().join("big.bin");
+        let (chunk_dir, manifest) = pack_roundtrip(src_dir.path(), &source, 1024);
+        assert!(manifest.chunk_count >= 2, "should have multiple chunks");
+
+        let unpack_dir = tempfile::tempdir().unwrap();
+        let progress = TransferProgress::hidden();
+        unpack_from_chunks(chunk_dir.path(), unpack_dir.path(), &manifest, &progress).unwrap();
+
+        let find_file = |name: &str| -> Vec<u8> {
+            for entry in walkdir(unpack_dir.path()) {
+                if entry.ends_with(name) {
+                    return fs::read(&entry).unwrap();
+                }
+            }
+            panic!("file {name} not found");
+        };
+
+        assert_eq!(find_file("big.bin"), data);
+    }
+
+    /// Helper: recursively collect all file paths under a directory.
+    fn walkdir(dir: &Path) -> Vec<std::path::PathBuf> {
+        let mut files = Vec::new();
+        walk_dir_test(dir, &mut files);
+        files
+    }
+
+    fn walk_dir_test(dir: &Path, files: &mut Vec<std::path::PathBuf>) {
+        if let Ok(entries) = fs::read_dir(dir) {
+            for entry in entries.flatten() {
+                let path = entry.path();
+                if path.is_dir() {
+                    walk_dir_test(&path, files);
+                } else {
+                    files.push(path);
+                }
+            }
+        }
     }
 
     /// TC-PCK-006: No temporary files created during streaming.
