@@ -30,6 +30,10 @@ pub struct Manifest {
     pub hash_algorithm: String,
     pub chunk_count: usize,
     pub chunks: Vec<ChunkEntry>,
+    /// Checksum of all source file contents (computed during pack, verified
+    /// after unpack).  `None` for manifests created before this field existed.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub source_checksum: Option<String>,
     pub created_utc: DateTime<Utc>,
     pub last_updated_utc: DateTime<Utc>,
 }
@@ -100,6 +104,7 @@ impl Manifest {
             hash_algorithm: hash_algorithm.to_string(),
             chunk_count,
             chunks,
+            source_checksum: None,
             created_utc: now,
             last_updated_utc: now,
         }
@@ -134,6 +139,29 @@ impl Manifest {
             chunk.size_bytes = size_bytes;
             chunk.checksum = checksum.to_string();
         }
+    }
+
+    /// Find the index of the first chunk that is not completed.
+    ///
+    /// Returns `None` if all chunks are completed (nothing to resume).
+    pub fn first_incomplete_chunk(&self) -> Option<usize> {
+        self.chunks
+            .iter()
+            .position(|c| c.status != ChunkStatus::Completed)
+    }
+
+    /// Check whether this manifest is compatible with a new pack operation,
+    /// allowing resume of a previous interrupted pack.
+    pub fn is_compatible_pack(
+        &self,
+        source_path: &str,
+        chunk_size_bytes: u64,
+        hash_algorithm: &str,
+    ) -> bool {
+        self.operation == Operation::Pack
+            && self.source_path == source_path
+            && self.chunk_size_bytes == chunk_size_bytes
+            && self.hash_algorithm == hash_algorithm
     }
 }
 
