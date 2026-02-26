@@ -102,17 +102,24 @@ cargo clippy -- -D warnings    # Lint
 cargo fmt --check              # Format check
 ```
 
-### License compliance
+### Supply-chain security
 
-Dependencies are audited with [cargo-deny](https://github.com/EmbarkStudios/cargo-deny). Install it once, then run locally:
+Three tools provide layered dependency assurance:
+
+| Tool | Purpose | Install |
+|------|---------|---------|
+| [cargo-deny](https://github.com/EmbarkStudios/cargo-deny) | License compliance, advisory checks, source restrictions, duplicate dep detection | `cargo install cargo-deny` |
+| [cargo-auditable](https://github.com/rust-secure-code/cargo-auditable) | Embeds dependency metadata in compiled binaries for offline auditing | `cargo install cargo-auditable` |
+| [cargo-audit](https://github.com/rustsec/rustsec) | Scans Cargo.lock or built binaries against RustSec advisories | `cargo install cargo-audit` |
 
 ```bash
-cargo install cargo-deny       # One-time install
-cargo deny check               # Run all checks (licenses, advisories, sources)
-cargo deny list                # Show all dependency licenses
+cargo deny check                                  # License, advisory, source, and ban checks
+cargo deny list                                    # Show all dependency licenses
+cargo auditable build --release                    # Release build with embedded dep manifest
+cargo audit bin target/release/airgap-transfer     # Scan built binary for vulnerabilities
 ```
 
-Configuration lives in `deny.toml`. CI enforces these checks on every push/PR and runs weekly advisory scans.
+Configuration lives in `deny.toml`. CI enforces cargo-deny on every push/PR (with weekly advisory scans) and builds an auditable release binary.
 
 ## License
 
