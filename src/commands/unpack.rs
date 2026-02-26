@@ -14,12 +14,28 @@ pub fn run(args: &UnpackArgs) -> Result<()> {
     let source = &args.source;
     let dest = &args.dest;
 
+    // Check if destination already has content (used to skip source checksum
+    // verification — extra pre-existing files would invalidate the hash).
+    let dest_was_nonempty = dest.exists()
+        && dest
+            .read_dir()
+            .map(|mut d| d.next().is_some())
+            .unwrap_or(false);
+
     // Overwrite protection: warn if destination is non-empty
-    if dest.exists() && dest.read_dir()?.next().is_some() && !args.force {
+    // --resume also bypasses this check (re-extraction is idempotent)
+    if dest_was_nonempty && !args.force && !args.resume {
         return Err(AirgapError::UserAbort(format!(
-            "destination {} is not empty. Use --force to overwrite.",
+            "destination {} is not empty. Use --force to overwrite or --resume to continue.",
             dest.display()
         )));
+    }
+
+    if args.resume {
+        println!(
+            "{} Resuming unpack (re-extracting all chunks)...",
+            "→".green().bold()
+        );
     }
 
     // Load manifest
@@ -29,7 +45,8 @@ pub fn run(args: &UnpackArgs) -> Result<()> {
     // Resolve hash algorithm from manifest
     let algorithm = verifier::algorithm_from_name(&manifest.hash_algorithm)?;
 
-    // Validate chunk completeness
+    // Validate chunk completeness — prompt for missing chunks if interactive
+    let interactive = std::io::IsTerminal::is_terminal(&std::io::stdin());
     println!(
         "{} Checking {} chunks...",
         "→".green().bold(),
@@ -38,11 +55,15 @@ pub fn run(args: &UnpackArgs) -> Result<()> {
     for chunk in &manifest.chunks {
         let chunk_path = source.join(&chunk.filename);
         if !chunk_path.exists() {
-            return Err(AirgapError::ChunkMissing(format!(
-                "{} not found in {}",
-                chunk.filename,
-                source.display()
-            )));
+            if interactive {
+                crate::prompt::prompt_unpack_swap(source, &chunk.filename)?;
+            } else {
+                return Err(AirgapError::ChunkMissing(format!(
+                    "{} not found in {}",
+                    chunk.filename,
+                    source.display()
+                )));
+            }
         }
     }
 
@@ -79,6 +100,24 @@ pub fn run(args: &UnpackArgs) -> Result<()> {
     chunker::unpack_from_chunks(source, dest, &manifest, &progress)?;
 
     progress.finish("unpacked");
+
+    // Verify reconstructed output against source checksum (if present in manifest).
+    // Skip when dest had pre-existing files — extra content would invalidate the hash.
+    if !args.no_verify
+        && !dest_was_nonempty
+        && let Some(expected) = &manifest.source_checksum
+    {
+        println!("{} Verifying reconstructed output...", "→".green().bold());
+        let actual = chunker::compute_source_checksum(dest, algorithm.as_ref())?;
+        if actual != *expected {
+            return Err(crate::error::AirgapError::Checksum {
+                path: dest.to_path_buf(),
+                expected: expected.clone(),
+                actual,
+            });
+        }
+        println!("{} Output matches original source", "✓".green().bold());
+    }
 
     // Sync filesystem
     usb::sync_filesystem()?;
@@ -125,6 +164,7 @@ mod tests {
             no_verify: false,
             keep_chunks: false,
             force: false,
+            resume: false,
             verbose: false,
         };
 

@@ -16,12 +16,11 @@ use crate::verifier::HashAlgorithm;
 /// Read buffer size (8 KiB) — keeps memory usage well under the 100 MB budget.
 const BUF_SIZE: usize = 8192;
 
-/// Pack source path into tar chunks at the destination directory.
+/// Convenience wrapper — pack from the start with no per-chunk callback.
 ///
-/// Each chunk is written as `chunk_XXX.tar`.  The manifest is updated with
-/// the actual size and checksum of each chunk after it is written.
-///
-/// The source can be a single file or a directory tree.
+/// Used by tests and simple callers that don't need resume or USB-swap
+/// prompting.
+#[cfg(test)]
 pub fn pack_to_chunks(
     source: &Path,
     dest: &Path,
@@ -29,6 +28,44 @@ pub fn pack_to_chunks(
     algorithm: &dyn HashAlgorithm,
     manifest: &mut Manifest,
     progress: &TransferProgress,
+) -> Result<()> {
+    pack_to_chunks_with_callback(
+        source,
+        dest,
+        chunk_size,
+        algorithm,
+        manifest,
+        progress,
+        0,
+        |_, _| Ok(()),
+    )
+}
+
+/// Pack source path into tar chunks at the destination directory.
+///
+/// Each chunk is written as `chunk_XXX.tar`.  The manifest is updated with
+/// the actual size and checksum of each chunk after it is written.
+///
+/// The source can be a single file or a directory tree.
+///
+/// When `resume_from` is greater than zero, chunks before that index are
+/// simulated (file sizes are tracked to maintain correct chunk boundaries)
+/// but no data is written to disk, allowing an interrupted pack to resume.
+///
+/// The `on_chunk_start` callback is invoked before each chunk (at or after
+/// `resume_from`) begins writing.  It receives the chunk index and
+/// destination path, and can be used to check available space, prompt for
+/// USB swapping, or save the manifest.
+#[allow(clippy::too_many_arguments)]
+pub fn pack_to_chunks_with_callback(
+    source: &Path,
+    dest: &Path,
+    chunk_size: u64,
+    algorithm: &dyn HashAlgorithm,
+    manifest: &mut Manifest,
+    progress: &TransferProgress,
+    resume_from: usize,
+    mut on_chunk_start: impl FnMut(usize, &Path) -> Result<()>,
 ) -> Result<()> {
     fs::create_dir_all(dest)?;
 
@@ -38,11 +75,21 @@ pub fn pack_to_chunks(
     // Track how many bytes have been written to the current chunk.
     let mut current_chunk_index: usize = 0;
     let mut current_chunk_bytes: u64 = 0;
-    let mut hasher = algorithm.create_writer();
-    let chunk_path = dest.join(&manifest.chunks[current_chunk_index].filename);
-    let mut chunk_file = fs::File::create(&chunk_path)?;
+    let skipping = resume_from > 0;
 
-    manifest.update_chunk(current_chunk_index, ChunkStatus::InProgress, 0, "");
+    // Only open file/hasher when we're writing (not skipping)
+    let mut hasher: Option<Box<dyn crate::verifier::HashWriter>> = None;
+    let mut chunk_file: Option<fs::File> = None;
+
+    if current_chunk_index >= resume_from {
+        on_chunk_start(current_chunk_index, dest)?;
+        // Delete partial chunk file if present
+        let chunk_path = dest.join(&manifest.chunks[current_chunk_index].filename);
+        let _ = fs::remove_file(&chunk_path);
+        chunk_file = Some(fs::File::create(&chunk_path)?);
+        hasher = Some(algorithm.create_writer());
+        manifest.update_chunk(current_chunk_index, ChunkStatus::InProgress, 0, "");
+    }
 
     for entry_path in &entries {
         let relative = entry_path
@@ -52,101 +99,127 @@ pub fn pack_to_chunks(
         let metadata = fs::metadata(entry_path)?;
         let file_size = metadata.len();
 
-        // Write tar header
-        let header_bytes = build_tar_header(relative, file_size)?;
-        write_to_chunk(
-            &header_bytes,
-            &mut chunk_file,
-            &mut hasher,
-            &mut current_chunk_bytes,
-        )?;
-        progress.advance(header_bytes.len() as u64);
-
-        // Stream file content in BUF_SIZE blocks
-        let mut source_file = fs::File::open(entry_path)?;
-        let mut buf = [0u8; BUF_SIZE];
-        loop {
-            let n = source_file.read(&mut buf)?;
-            if n == 0 {
-                break;
+        if current_chunk_index < resume_from {
+            // Simulate: track sizes without writing
+            let header_size = 512u64; // tar header is always 512 bytes
+            current_chunk_bytes += header_size;
+            current_chunk_bytes += file_size;
+            let remainder = (file_size % 512) as u64;
+            if remainder > 0 {
+                current_chunk_bytes += 512 - remainder;
             }
+        } else {
+            // Write tar header
+            let header_bytes = build_tar_header(relative, file_size)?;
             write_to_chunk(
-                &buf[..n],
-                &mut chunk_file,
-                &mut hasher,
+                &header_bytes,
+                chunk_file.as_mut().unwrap(),
+                hasher.as_mut().unwrap(),
                 &mut current_chunk_bytes,
             )?;
-            progress.advance(n as u64);
-        }
+            progress.advance(header_bytes.len() as u64);
 
-        // Tar entries are padded to 512-byte boundaries
-        let remainder = (file_size % 512) as usize;
-        if remainder > 0 {
-            let padding = vec![0u8; 512 - remainder];
-            write_to_chunk(
-                &padding,
-                &mut chunk_file,
-                &mut hasher,
-                &mut current_chunk_bytes,
-            )?;
+            // Stream file content in BUF_SIZE blocks
+            let mut source_file = fs::File::open(entry_path)?;
+            let mut buf = [0u8; BUF_SIZE];
+            loop {
+                let n = source_file.read(&mut buf)?;
+                if n == 0 {
+                    break;
+                }
+                write_to_chunk(
+                    &buf[..n],
+                    chunk_file.as_mut().unwrap(),
+                    hasher.as_mut().unwrap(),
+                    &mut current_chunk_bytes,
+                )?;
+                progress.advance(n as u64);
+            }
+
+            // Tar entries are padded to 512-byte boundaries
+            let remainder = (file_size % 512) as usize;
+            if remainder > 0 {
+                let padding = vec![0u8; 512 - remainder];
+                write_to_chunk(
+                    &padding,
+                    chunk_file.as_mut().unwrap(),
+                    hasher.as_mut().unwrap(),
+                    &mut current_chunk_bytes,
+                )?;
+            }
         }
 
         // Check if we should start a new chunk (if we've exceeded the target size
         // and there are more files to write)
         if current_chunk_bytes >= chunk_size && current_chunk_index + 1 < manifest.chunk_count {
-            // Finalize current chunk with two 512-byte zero blocks (tar EOF)
-            let eof_block = [0u8; 1024];
-            write_to_chunk(
-                &eof_block,
-                &mut chunk_file,
-                &mut hasher,
-                &mut current_chunk_bytes,
-            )?;
+            if current_chunk_index >= resume_from {
+                // Finalize current chunk with two 512-byte zero blocks (tar EOF)
+                let eof_block = [0u8; 1024];
+                write_to_chunk(
+                    &eof_block,
+                    chunk_file.as_mut().unwrap(),
+                    hasher.as_mut().unwrap(),
+                    &mut current_chunk_bytes,
+                )?;
 
-            let checksum = hasher.finalize();
-            manifest.update_chunk(
-                current_chunk_index,
-                ChunkStatus::Completed,
-                current_chunk_bytes,
-                &checksum,
-            );
+                let checksum = hasher.take().unwrap().finalize();
+                manifest.update_chunk(
+                    current_chunk_index,
+                    ChunkStatus::Completed,
+                    current_chunk_bytes,
+                    &checksum,
+                );
 
-            progress.verbose_message(&format!(
-                "  chunk_{:03}.tar: {} bytes, {}",
-                current_chunk_index, current_chunk_bytes, checksum
-            ));
+                progress.verbose_message(&format!(
+                    "  chunk_{:03}.tar: {} bytes, {}",
+                    current_chunk_index, current_chunk_bytes, checksum
+                ));
+            } else if skipping {
+                progress.verbose_message(&format!(
+                    "  chunk_{:03}.tar: skipped (already completed)",
+                    current_chunk_index
+                ));
+            }
 
             // Start next chunk
             current_chunk_index += 1;
             current_chunk_bytes = 0;
-            hasher = algorithm.create_writer();
-            let next_path = dest.join(&manifest.chunks[current_chunk_index].filename);
-            chunk_file = fs::File::create(&next_path)?;
-            manifest.update_chunk(current_chunk_index, ChunkStatus::InProgress, 0, "");
+
+            if current_chunk_index >= resume_from {
+                on_chunk_start(current_chunk_index, dest)?;
+                // Delete partial chunk file if present
+                let next_path = dest.join(&manifest.chunks[current_chunk_index].filename);
+                let _ = fs::remove_file(&next_path);
+                chunk_file = Some(fs::File::create(&next_path)?);
+                hasher = Some(algorithm.create_writer());
+                manifest.update_chunk(current_chunk_index, ChunkStatus::InProgress, 0, "");
+            }
         }
     }
 
-    // Finalize the last chunk with tar EOF
-    let eof_block = [0u8; 1024];
-    write_to_chunk(
-        &eof_block,
-        &mut chunk_file,
-        &mut hasher,
-        &mut current_chunk_bytes,
-    )?;
-    drop(chunk_file);
+    // Finalize the last chunk
+    if current_chunk_index >= resume_from {
+        let eof_block = [0u8; 1024];
+        write_to_chunk(
+            &eof_block,
+            chunk_file.as_mut().unwrap(),
+            hasher.as_mut().unwrap(),
+            &mut current_chunk_bytes,
+        )?;
+        drop(chunk_file);
 
-    let checksum = hasher.finalize();
-    manifest.update_chunk(
-        current_chunk_index,
-        ChunkStatus::Completed,
-        current_chunk_bytes,
-        &checksum,
-    );
-    progress.verbose_message(&format!(
-        "  chunk_{:03}.tar: {} bytes, {}",
-        current_chunk_index, current_chunk_bytes, checksum
-    ));
+        let checksum = hasher.take().unwrap().finalize();
+        manifest.update_chunk(
+            current_chunk_index,
+            ChunkStatus::Completed,
+            current_chunk_bytes,
+            &checksum,
+        );
+        progress.verbose_message(&format!(
+            "  chunk_{:03}.tar: {} bytes, {}",
+            current_chunk_index, current_chunk_bytes, checksum
+        ));
+    }
 
     // If we created fewer chunks than initially estimated, truncate the manifest
     manifest.chunk_count = current_chunk_index + 1;
@@ -194,6 +267,32 @@ pub fn calculate_total_size(source: &Path) -> Result<u64> {
         total += fs::metadata(entry)?.len();
     }
     Ok(total)
+}
+
+/// Compute a checksum over all source file contents in deterministic order.
+///
+/// Files are enumerated in the same sorted order used by packing, and their
+/// raw content is fed into a single running hash.  This produces a
+/// whole-source fingerprint that can be compared after unpacking to verify
+/// that the reconstructed output is bit-identical to the original.
+pub fn compute_source_checksum(
+    source: &Path,
+    algorithm: &dyn crate::verifier::HashAlgorithm,
+) -> Result<String> {
+    let entries = collect_entries(source)?;
+    let mut writer = algorithm.create_writer();
+    let mut buf = [0u8; BUF_SIZE];
+    for entry_path in &entries {
+        let mut file = fs::File::open(entry_path)?;
+        loop {
+            let n = file.read(&mut buf)?;
+            if n == 0 {
+                break;
+            }
+            writer.update(&buf[..n]);
+        }
+    }
+    Ok(writer.finalize())
 }
 
 // ── Internal helpers ────────────────────────────────────────────────────

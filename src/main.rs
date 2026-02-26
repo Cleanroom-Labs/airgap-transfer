@@ -7,6 +7,7 @@ mod commands;
 mod error;
 mod manifest;
 mod progress;
+mod prompt;
 mod usb;
 mod verifier;
 
@@ -71,6 +72,10 @@ pub struct PackArgs {
     #[arg(long)]
     pub force: bool,
 
+    /// Resume an interrupted pack operation.
+    #[arg(long)]
+    pub resume: bool,
+
     /// Show detailed progress for each chunk.
     #[arg(long, short)]
     pub verbose: bool,
@@ -96,6 +101,10 @@ pub struct UnpackArgs {
     /// Overwrite existing files at destination.
     #[arg(long)]
     pub force: bool,
+
+    /// Resume an interrupted unpack operation.
+    #[arg(long)]
+    pub resume: bool,
 
     /// Show detailed progress.
     #[arg(long, short)]
