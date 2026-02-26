@@ -144,39 +144,6 @@ pub fn run(chunk_location: &Path, verify: bool) -> Result<()> {
     Ok(())
 }
 
-/// Create a test directory with a saved manifest and chunk files.
-#[cfg(test)]
-fn setup_list_fixture() -> (tempfile::TempDir, Manifest) {
-    use crate::chunker;
-    use crate::manifest::MANIFEST_FILENAME;
-    use crate::progress::TransferProgress;
-    use crate::verifier::Sha256Algorithm;
-
-    let src_dir = tempfile::tempdir().unwrap();
-    let dest_dir = tempfile::tempdir().unwrap();
-
-    // Create a source file and pack it
-    std::fs::write(src_dir.path().join("data.txt"), b"test data for listing").unwrap();
-    let source = src_dir.path().join("data.txt");
-    let total = chunker::calculate_total_size(&source).unwrap();
-    let mut manifest = Manifest::new_pack(source.to_str().unwrap(), total, 1_000_000, "sha256");
-    let progress = TransferProgress::hidden();
-    chunker::pack_to_chunks(
-        &source,
-        dest_dir.path(),
-        1_000_000,
-        &Sha256Algorithm,
-        &mut manifest,
-        &progress,
-    )
-    .unwrap();
-    manifest
-        .save(&dest_dir.path().join(MANIFEST_FILENAME))
-        .unwrap();
-
-    (dest_dir, manifest)
-}
-
 /// Truncate a checksum like "sha256:abcdef012345..." to "sha256:abcdef01…"
 fn truncate_checksum(checksum: &str) -> String {
     if let Some((prefix, hash)) = checksum.split_once(':') {
@@ -193,6 +160,36 @@ fn truncate_checksum(checksum: &str) -> String {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::chunker;
+    use crate::manifest::MANIFEST_FILENAME;
+    use crate::progress::TransferProgress;
+    use crate::verifier::Sha256Algorithm;
+
+    /// Create a test directory with a saved manifest and chunk files.
+    fn setup_list_fixture() -> (tempfile::TempDir, Manifest) {
+        let src_dir = tempfile::tempdir().unwrap();
+        let dest_dir = tempfile::tempdir().unwrap();
+
+        std::fs::write(src_dir.path().join("data.txt"), b"test data for listing").unwrap();
+        let source = src_dir.path().join("data.txt");
+        let total = chunker::calculate_total_size(&source).unwrap();
+        let mut manifest = Manifest::new_pack(source.to_str().unwrap(), total, 1_000_000, "sha256");
+        let progress = TransferProgress::hidden();
+        chunker::pack_to_chunks(
+            &source,
+            dest_dir.path(),
+            1_000_000,
+            &Sha256Algorithm,
+            &mut manifest,
+            &progress,
+        )
+        .unwrap();
+        manifest
+            .save(&dest_dir.path().join(MANIFEST_FILENAME))
+            .unwrap();
+
+        (dest_dir, manifest)
+    }
 
     /// TC-LST-001: List command succeeds with valid manifest and chunks.
     #[test]
