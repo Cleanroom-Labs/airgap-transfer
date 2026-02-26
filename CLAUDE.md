@@ -45,7 +45,10 @@ cargo build --release --offline # Air-gap build (after cargo vendor)
 cargo test                     # Run all tests
 cargo clippy -- -D warnings    # Lint (must pass with zero warnings)
 cargo fmt --check              # Format check
+cargo deny check               # License + advisory audit (requires: cargo install cargo-deny)
 ```
+
+`deny.toml` configures license allowlisting (AGPL-compatible only), security advisory checks, and source restrictions (crates.io only). CI runs these checks on every push/PR and weekly for new advisories.
 
 ## Code Quality Standards
 
