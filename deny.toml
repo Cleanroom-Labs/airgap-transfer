@@ -1,8 +1,5 @@
 [advisories]
 version = 2
-# number_prefix is unmaintained (RUSTSEC-2025-0119) but it's a transitive dep
-# of indicatif with no available fix. No security impact — just formatting.
-ignore = ["RUSTSEC-2025-0119"]
 
 [licenses]
 version = 2
