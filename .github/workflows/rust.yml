@@ -5,6 +5,8 @@ on:
     branches: ["main"]
   pull_request:
     branches: ["main"]
+  schedule:
+    - cron: "0 9 * * 1" # Weekly advisory check (Monday 9am UTC)
 
 env:
   CARGO_TERM_COLOR: always
