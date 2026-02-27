@@ -123,9 +123,18 @@ When encountering bugs or test failures, investigate the root cause before attem
 
 ## Documentation
 
-Full specifications are in the `docs/` submodule (Sphinx project):
+Full specifications are in the `docs/spec-docs/` submodule (Sphinx project):
 
-- `docs/source/requirements/srs.rst` — Software Requirements Specification
-- `docs/source/design/sdd.rst` — Software Design Document
-- `docs/source/testing/plan.rst` — Test Plan
-- `docs/source/roadmap.md` — Project Roadmap
+- `docs/spec-docs/source/requirements/srs.rst` — Software Requirements Specification
+- `docs/spec-docs/source/design/sdd.rst` — Software Design Document
+- `docs/spec-docs/source/testing/plan.rst` — Test Plan
+- `docs/spec-docs/source/roadmap.md` — Project Roadmap
+
+### Building docs locally
+
+```bash
+git submodule update --init --recursive
+pip install -r docs/requirements.txt
+make -C docs html                     # Build unified site → docs/_build/html/
+make -C docs full                     # Build with test results (requires Rust nightly)
+```

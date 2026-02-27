@@ -7,6 +7,7 @@ use tempfile::tempdir;
 mod common;
 use common::cmd;
 
+/// Spec: TC-LST-001
 /// List after pack shows all chunks present.
 #[test]
 fn list_all_present() {
@@ -31,6 +32,7 @@ fn list_all_present() {
         .stdout(predicate::str::contains("All 1 chunks present"));
 }
 
+/// Spec: TC-LST-005
 /// List with --verify reports OK for intact chunks.
 #[test]
 fn list_verify_ok() {
@@ -55,6 +57,7 @@ fn list_verify_ok() {
         .stdout(predicate::str::contains("verified"));
 }
 
+/// Spec: TC-LST-003
 /// List after removing a chunk shows MISSING.
 #[test]
 fn list_missing_chunk() {
@@ -83,6 +86,7 @@ fn list_missing_chunk() {
         .stdout(predicate::str::contains("missing"));
 }
 
+/// Spec: TC-LST-005
 /// List with --verify on corrupted chunk shows CORRUPT.
 #[test]
 fn list_verify_corrupt() {
@@ -110,6 +114,7 @@ fn list_verify_corrupt() {
         .stdout(predicate::str::contains("corrupted"));
 }
 
+/// Spec: TC-TRANSFER-ERR-002
 /// List without a manifest produces an error.
 #[test]
 fn list_no_manifest() {

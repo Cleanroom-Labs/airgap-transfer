@@ -54,9 +54,9 @@ jobs:
         with:
           python-version: '3.x'
       - name: Install Sphinx dependencies
-        run: pip install -r docs/requirements.txt
+        run: pip install -r docs/spec-docs/requirements.txt
       - name: Build HTML docs
-        run: STANDALONE_DOCS=1 make -C docs html
+        run: STANDALONE_DOCS=1 make -C docs/spec-docs html
 
   deny:
     name: License & advisory check

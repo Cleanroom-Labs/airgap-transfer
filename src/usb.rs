@@ -64,7 +64,8 @@ pub fn sync_filesystem() -> Result<()> {
 mod tests {
     use super::*;
 
-    /// TC-PCK-003 (partial): Query available space on a temp directory.
+    /// Spec: TC-PCK-003
+    /// Query available space on a temp directory.
     #[test]
     fn available_space_is_nonzero() {
         let dir = tempfile::tempdir().unwrap();
@@ -72,6 +73,7 @@ mod tests {
         assert!(space > 0, "available space should be > 0");
     }
 
+    /// Spec: TC-SAF-003
     /// sync_filesystem completes without error.
     #[test]
     fn sync_does_not_panic() {

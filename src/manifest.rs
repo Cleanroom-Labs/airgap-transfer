@@ -193,7 +193,8 @@ impl std::fmt::Display for ChunkStatus {
 mod tests {
     use super::*;
 
-    /// TC-PCK-005: Manifest creation with correct structure.
+    /// Spec: TC-PCK-005
+    /// Manifest creation with correct structure.
     #[test]
     fn new_pack_manifest() {
         let m = Manifest::new_pack("/data/bigfile.iso", 3_000_000_000, 1_000_000_000, "sha256");
@@ -220,6 +221,7 @@ mod tests {
         }
     }
 
+    /// Spec: TC-PCK-001
     /// Chunk count rounds up correctly.
     #[test]
     fn chunk_count_rounds_up() {
@@ -229,6 +231,7 @@ mod tests {
         assert_eq!(m.chunks.len(), 3);
     }
 
+    /// Spec: TC-PCK-001
     /// Zero-byte source still creates one chunk.
     #[test]
     fn zero_byte_source() {
@@ -236,7 +239,8 @@ mod tests {
         assert_eq!(m.chunk_count, 1);
     }
 
-    /// TC-STA-001: Manifest serialization round-trip.
+    /// Spec: TC-STA-001
+    /// Manifest serialization round-trip.
     #[test]
     fn save_and_load_roundtrip() {
         let dir = tempfile::tempdir().unwrap();
@@ -257,7 +261,8 @@ mod tests {
         assert_eq!(loaded.chunks[0].checksum, "sha256:aaa");
     }
 
-    /// TC-STA-002: Chunk status tracking via update_chunk.
+    /// Spec: TC-STA-002
+    /// Chunk status tracking via update_chunk.
     #[test]
     fn update_chunk_status() {
         let mut m = Manifest::new_pack("/src", 10_000, 5_000, "sha256");
@@ -279,6 +284,7 @@ mod tests {
         assert_eq!(m.chunks[1].status, ChunkStatus::Pending);
     }
 
+    /// Spec: TC-PCK-005
     /// JSON output matches expected schema structure.
     #[test]
     fn json_schema_structure() {
@@ -293,6 +299,7 @@ mod tests {
         assert!(json.contains("\"pending\""));
     }
 
+    /// Spec: TC-TRANSFER-ERR-003
     /// Loading a non-existent file returns an I/O error.
     #[test]
     fn load_missing_file() {
@@ -300,6 +307,7 @@ mod tests {
         assert!(result.is_err());
     }
 
+    /// Spec: TC-TRANSFER-ERR-003
     /// Loading invalid JSON returns a ManifestInvalid error.
     #[test]
     fn load_invalid_json() {

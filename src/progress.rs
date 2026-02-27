@@ -87,6 +87,7 @@ pub fn format_bytes(bytes: u64) -> String {
 mod tests {
     use super::*;
 
+    /// Spec: TC-TRANSFER-NFR-011
     #[test]
     fn format_bytes_units() {
         assert_eq!(format_bytes(0), "0 bytes");

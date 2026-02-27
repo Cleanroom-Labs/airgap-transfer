@@ -86,14 +86,31 @@ AirGap Transfer is **private by architecture**:
 
 ## Documentation
 
-Detailed specifications live in the [`docs/`](docs/) submodule:
+Full project documentation — including specifications, a traceability dashboard, and implementation mapping — is deployed to [GitHub Pages](https://cleanroom-labs.github.io/airgap-transfer/).
+
+Specifications live in the [`docs/spec-docs/`](docs/spec-docs/) submodule:
 
 | Document | Purpose |
 |----------|---------|
-| [Requirements (SRS)](docs/source/requirements/srs.rst) | Functional and non-functional requirements |
-| [Design (SDD)](docs/source/design/sdd.rst) | Architecture and component design |
-| [Test Plan](docs/source/testing/plan.rst) | Test cases and procedures |
-| [Roadmap](docs/source/roadmap.md) | Implementation milestones |
+| [Requirements (SRS)](docs/spec-docs/source/requirements/srs.rst) | Functional and non-functional requirements |
+| [Design (SDD)](docs/spec-docs/source/design/sdd.rst) | Architecture and component design |
+| [Test Plan](docs/spec-docs/source/testing/plan.rst) | Test cases and procedures |
+| [Roadmap](docs/spec-docs/source/roadmap.md) | Implementation milestones |
+
+### Building docs locally
+
+```bash
+git submodule update --init --recursive
+pip install -r docs/requirements.txt
+make -C docs html
+open docs/_build/html/index.html
+```
+
+To include live test results in the dashboard (requires Rust nightly):
+
+```bash
+make -C docs full
+```
 
 ## Development
 

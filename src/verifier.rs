@@ -103,7 +103,8 @@ mod tests {
     use super::*;
     use std::io::Write;
 
-    /// TC-INT-001: Generate SHA-256 checksum, verify matches known value.
+    /// Spec: TC-INT-001
+    /// Generate SHA-256 checksum, verify matches known value.
     #[test]
     fn sha256_known_value() {
         let mut writer = Sha256Algorithm.create_writer();
@@ -116,14 +117,16 @@ mod tests {
         );
     }
 
-    /// TC-CRA-002: Default hash algorithm is SHA-256.
+    /// Spec: TC-CRA-002
+    /// Default hash algorithm is SHA-256.
     #[test]
     fn default_algorithm_is_sha256() {
         let algo = algorithm_from_name("sha256").unwrap();
         assert_eq!(algo.name(), "sha256");
     }
 
-    /// TC-CRA-006: Invalid algorithm name is rejected.
+    /// Spec: TC-CRA-006
+    /// Invalid algorithm name is rejected.
     #[test]
     fn invalid_algorithm_rejected() {
         let result = algorithm_from_name("md5");
@@ -137,7 +140,8 @@ mod tests {
         }
     }
 
-    /// TC-CRA-005: Pluggable hash backend interface works via trait object.
+    /// Spec: TC-CRA-005
+    /// Pluggable hash backend interface works via trait object.
     #[test]
     fn trait_object_dispatch() {
         let algo: Box<dyn HashAlgorithm> = Box::new(Sha256Algorithm);
@@ -147,7 +151,8 @@ mod tests {
         assert!(digest.starts_with("sha256:"));
     }
 
-    /// TC-INT-001 (file variant): Compute checksum of a real file.
+    /// Spec: TC-INT-001
+    /// Compute checksum of a real file.
     #[test]
     fn compute_file_checksum() {
         let dir = tempfile::tempdir().unwrap();
@@ -161,7 +166,8 @@ mod tests {
         );
     }
 
-    /// TC-INT-002: Computed checksum matches expected value.
+    /// Spec: TC-INT-001
+    /// Computed checksum matches expected value.
     #[test]
     fn compute_checksum_match() {
         let dir = tempfile::tempdir().unwrap();
@@ -173,7 +179,8 @@ mod tests {
         assert_eq!(actual, expected);
     }
 
-    /// TC-INT-003: Detect corrupted data (checksum mismatch).
+    /// Spec: TC-INT-003
+    /// Detect corrupted data (checksum mismatch).
     #[test]
     fn compute_checksum_mismatch() {
         let dir = tempfile::tempdir().unwrap();
@@ -185,7 +192,8 @@ mod tests {
         assert_ne!(actual, wrong);
     }
 
-    /// TC-INT-004: Verify integrity after content modification.
+    /// Spec: TC-INT-003
+    /// Verify integrity after content modification.
     #[test]
     fn detect_modified_file() {
         let dir = tempfile::tempdir().unwrap();
@@ -205,7 +213,8 @@ mod tests {
         assert_ne!(actual, original_checksum);
     }
 
-    /// TC-CRA-003 / TC-CRA-004: Algorithm name appears in digest prefix.
+    /// Spec: TC-CRA-003
+    /// Algorithm name appears in digest prefix.
     #[test]
     fn digest_prefix_matches_algorithm_name() {
         let algo = algorithm_from_name("sha256").unwrap();
@@ -215,6 +224,7 @@ mod tests {
         assert!(digest.starts_with(&format!("{}:", algo.name())));
     }
 
+    /// Spec: TC-INT-001
     /// Incremental update produces same result as single update.
     #[test]
     fn incremental_hashing() {

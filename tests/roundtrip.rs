@@ -12,6 +12,7 @@ fn create_source_file(dir: &std::path::Path, name: &str, content: &[u8]) {
     fs::write(dir.join(name), content).unwrap();
 }
 
+/// Spec: TC-UNP-001
 /// Pack a single file, list it, unpack it, compare byte-for-byte.
 #[test]
 fn single_file_roundtrip() {
@@ -85,6 +86,7 @@ fn find_file(root: &std::path::Path, name: &str) -> Vec<u8> {
     walk(root, name).unwrap_or_else(|| panic!("file {name} not found under {}", root.display()))
 }
 
+/// Spec: TC-UNP-003
 /// Pack a directory with multiple files, unpack, compare all.
 #[test]
 fn directory_roundtrip() {
@@ -126,6 +128,7 @@ fn directory_roundtrip() {
     assert_eq!(find_file(out_dir.path(), "c.txt"), b"nested file");
 }
 
+/// Spec: TC-TRANSFER-CLI-004
 /// Pack with --dry-run should produce no files.
 #[test]
 fn dry_run_writes_nothing() {
@@ -153,6 +156,7 @@ fn dry_run_writes_nothing() {
     assert!(entries.is_empty(), "dry-run should not write any files");
 }
 
+/// Spec: TC-TRANSFER-CLI-005
 /// Pack with --no-verify still produces valid chunks that can be unpacked.
 #[test]
 fn no_verify_still_valid() {
@@ -188,6 +192,7 @@ fn no_verify_still_valid() {
     assert_eq!(fs::read(out_dir.path().join("nv.txt")).unwrap(), content);
 }
 
+/// Spec: TC-UNP-001
 /// Multi-chunk roundtrip: source larger than chunk size produces multiple chunks.
 #[test]
 fn multi_chunk_roundtrip() {
