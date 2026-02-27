@@ -13,6 +13,10 @@ import os
 sys.path.insert(0, os.path.abspath('../spec-docs/common'))
 from theme_config import *  # noqa: F401, F403
 
+# Local extensions (e.g. needpie layout fix)
+sys.path.insert(0, os.path.abspath('_ext'))
+extensions.append('needpie_fix')
+
 project = 'AirGap Transfer Docs'
 copyright = '2026, Cleanroom Labs'
 author = 'Cleanroom Labs'
