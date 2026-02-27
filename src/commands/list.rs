@@ -191,14 +191,16 @@ mod tests {
         (dest_dir, manifest)
     }
 
-    /// TC-LST-001: List command succeeds with valid manifest and chunks.
+    /// Spec: TC-LST-001
+    /// List command succeeds with valid manifest and chunks.
     #[test]
     fn list_valid_manifest() {
         let (dir, _manifest) = setup_list_fixture();
         assert!(run(dir.path(), false).is_ok());
     }
 
-    /// TC-LST-003: List identifies missing chunk files.
+    /// Spec: TC-LST-003
+    /// List identifies missing chunk files.
     #[test]
     fn list_flags_missing_chunks() {
         let (dir, _manifest) = setup_list_fixture();
@@ -210,7 +212,8 @@ mod tests {
         assert!(run(dir.path(), false).is_ok());
     }
 
-    /// TC-LST-005: List --verify detects corruption.
+    /// Spec: TC-LST-005
+    /// List --verify detects corruption.
     #[test]
     fn list_verify_detects_corruption() {
         let (dir, _manifest) = setup_list_fixture();
@@ -222,6 +225,7 @@ mod tests {
         assert!(run(dir.path(), true).is_ok());
     }
 
+    /// Spec: TC-LST-005
     /// List --verify succeeds when chunks are intact.
     #[test]
     fn list_verify_all_ok() {
@@ -229,6 +233,7 @@ mod tests {
         assert!(run(dir.path(), true).is_ok());
     }
 
+    /// Spec: TC-LST-002
     #[test]
     fn truncate_checksum_long_hash() {
         assert_eq!(
@@ -237,11 +242,13 @@ mod tests {
         );
     }
 
+    /// Spec: TC-LST-002
     #[test]
     fn truncate_checksum_short_hash() {
         assert_eq!(truncate_checksum("sha256:abcd"), "sha256:abcd");
     }
 
+    /// Spec: TC-LST-002
     #[test]
     fn truncate_checksum_no_prefix() {
         assert_eq!(truncate_checksum("nocolon"), "nocolon");

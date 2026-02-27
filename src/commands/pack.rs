@@ -246,7 +246,8 @@ mod tests {
     use crate::error::AirgapError;
     use crate::manifest::{MANIFEST_FILENAME, Manifest};
 
-    /// TC-SAF-001: Pack aborts when destination has existing manifest.
+    /// Spec: TC-SAF-001
+    /// Pack aborts when destination has existing manifest.
     #[test]
     fn pack_aborts_without_force() {
         let src_dir = tempfile::tempdir().unwrap();
@@ -283,7 +284,8 @@ mod tests {
         }
     }
 
-    /// TC-SAF-005: Pack succeeds with --force over existing manifest.
+    /// Spec: TC-SAF-005
+    /// Pack succeeds with --force over existing manifest.
     #[test]
     fn pack_succeeds_with_force() {
         let src_dir = tempfile::tempdir().unwrap();
@@ -313,6 +315,7 @@ mod tests {
         assert!(super::run(&args).is_ok());
     }
 
+    /// Spec: TC-SAF-002
     /// Pack aborts when source does not exist.
     #[test]
     fn pack_rejects_missing_source() {

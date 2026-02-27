@@ -7,6 +7,7 @@ use tempfile::tempdir;
 mod common;
 use common::cmd;
 
+/// Spec: TC-STA-003
 /// Simulate interrupted pack by packing, deleting a chunk, then resuming.
 #[test]
 fn pack_resume_after_partial() {
@@ -94,6 +95,7 @@ fn pack_resume_after_partial() {
         .success();
 }
 
+/// Spec: TC-STA-003
 /// Pack --resume on completed pack should be a no-op.
 #[test]
 fn pack_resume_already_complete() {
@@ -125,6 +127,7 @@ fn pack_resume_already_complete() {
         .stdout(predicate::str::contains("already completed"));
 }
 
+/// Spec: TC-STA-003
 /// Pack --resume with incompatible manifest should error.
 #[test]
 fn pack_resume_incompatible_manifest() {
@@ -158,6 +161,7 @@ fn pack_resume_incompatible_manifest() {
         .stderr(predicate::str::contains("not compatible"));
 }
 
+/// Spec: TC-STA-004
 /// Unpack --resume into non-empty directory succeeds.
 #[test]
 fn unpack_resume_nonempty_dest() {
@@ -208,6 +212,7 @@ fn unpack_resume_nonempty_dest() {
     assert_eq!(fs::read(out_dir.path().join("data.txt")).unwrap(), content);
 }
 
+/// Spec: TC-SAF-001
 /// Pack error message suggests both --force and --resume.
 #[test]
 fn pack_suggests_resume_and_force() {

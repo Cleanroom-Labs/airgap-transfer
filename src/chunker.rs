@@ -401,7 +401,8 @@ mod tests {
         fs::write(&path, content).unwrap();
     }
 
-    /// TC-PCK-001: Pack a single file into chunks, verify chunk creation.
+    /// Spec: TC-PCK-001
+    /// Pack a single file into chunks, verify chunk creation.
     #[test]
     fn pack_single_file() {
         let src_dir = tempfile::tempdir().unwrap();
@@ -437,7 +438,8 @@ mod tests {
         assert!(manifest.chunks[0].size_bytes > 0);
     }
 
-    /// TC-PCK-002: Pack a directory with multiple files.
+    /// Spec: TC-PCK-002
+    /// Pack a directory with multiple files.
     #[test]
     fn pack_directory() {
         let src_dir = tempfile::tempdir().unwrap();
@@ -466,7 +468,8 @@ mod tests {
         assert_eq!(manifest.chunks[0].status, ChunkStatus::Completed);
     }
 
-    /// TC-PCK-007: Chunk size flag produces correct number of chunks.
+    /// Spec: TC-PCK-007
+    /// Chunk size flag produces correct number of chunks.
     #[test]
     fn small_chunk_size_splits_data() {
         let src_dir = tempfile::tempdir().unwrap();
@@ -509,6 +512,7 @@ mod tests {
         }
     }
 
+    /// Spec: TC-PCK-001
     /// Chunks are valid tar files that can be read back.
     #[test]
     fn chunks_are_valid_tar() {
@@ -541,6 +545,7 @@ mod tests {
         assert!(!entries.is_empty(), "tar should have at least one entry");
     }
 
+    /// Spec: TC-PCK-004
     /// Checksum in manifest matches independently computed checksum.
     #[test]
     fn manifest_checksum_matches_file() {
@@ -570,6 +575,7 @@ mod tests {
         assert_eq!(manifest.chunks[0].checksum, independent);
     }
 
+    /// Spec: TC-TRANSFER-ERR-003
     /// Source path that doesn't exist returns an error.
     #[test]
     fn nonexistent_source_errors() {
@@ -615,7 +621,8 @@ mod tests {
         (dest_dir, manifest)
     }
 
-    /// TC-UNP-001: Pack then unpack a directory, verify files match originals.
+    /// Spec: TC-UNP-003
+    /// Pack then unpack a directory, verify files match originals.
     #[test]
     fn unpack_roundtrip_directory() {
         let src_dir = tempfile::tempdir().unwrap();
@@ -646,7 +653,8 @@ mod tests {
         assert_eq!(find_file("c.txt"), b"Nested file C");
     }
 
-    /// TC-UNP-001 (single file variant): Pack and unpack a single file.
+    /// Spec: TC-UNP-001
+    /// Pack and unpack a single file.
     #[test]
     fn unpack_roundtrip_single_file() {
         let src_dir = tempfile::tempdir().unwrap();
@@ -672,7 +680,8 @@ mod tests {
         assert_eq!(find_file("hello.txt"), content);
     }
 
-    /// TC-UNP-004: Missing chunk file returns ChunkMissing error.
+    /// Spec: TC-UNP-004
+    /// Missing chunk file returns ChunkMissing error.
     #[test]
     fn unpack_missing_chunk_errors() {
         let src_dir = tempfile::tempdir().unwrap();
@@ -690,7 +699,8 @@ mod tests {
         assert!(result.is_err());
     }
 
-    /// TC-UNP-001 (multi-chunk): Pack with small chunks, unpack, verify content.
+    /// Spec: TC-UNP-001
+    /// Pack with small chunks, unpack, verify content.
     #[test]
     fn unpack_multi_chunk_roundtrip() {
         let src_dir = tempfile::tempdir().unwrap();
@@ -737,7 +747,8 @@ mod tests {
         }
     }
 
-    /// TC-PCK-006: No temporary files created during streaming.
+    /// Spec: TC-PCK-006
+    /// No temporary files created during streaming.
     #[test]
     fn no_temp_files() {
         let src_dir = tempfile::tempdir().unwrap();

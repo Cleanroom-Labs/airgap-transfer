@@ -160,31 +160,37 @@ fn parse_size(s: &str) -> Result<u64, String> {
 mod tests {
     use super::*;
 
+    /// Spec: TC-TRANSFER-CLI-006
     #[test]
     fn parse_size_plain_number() {
         assert_eq!(parse_size("1024").unwrap(), 1024);
     }
 
+    /// Spec: TC-TRANSFER-CLI-006
     #[test]
     fn parse_size_kb() {
         assert_eq!(parse_size("10KB").unwrap(), 10 * 1024);
     }
 
+    /// Spec: TC-TRANSFER-CLI-006
     #[test]
     fn parse_size_mb() {
         assert_eq!(parse_size("5MB").unwrap(), 5 * 1_048_576);
     }
 
+    /// Spec: TC-TRANSFER-CLI-006
     #[test]
     fn parse_size_gb() {
         assert_eq!(parse_size("1GB").unwrap(), 1_073_741_824);
     }
 
+    /// Spec: TC-TRANSFER-CLI-006
     #[test]
     fn parse_size_lowercase() {
         assert_eq!(parse_size("2gb").unwrap(), 2 * 1_073_741_824);
     }
 
+    /// Spec: TC-TRANSFER-CLI-006
     #[test]
     fn parse_size_invalid() {
         assert!(parse_size("abc").is_err());

@@ -147,7 +147,8 @@ mod tests {
     use crate::UnpackArgs;
     use crate::error::AirgapError;
 
-    /// TC-SAF-001: Unpack aborts when destination is non-empty.
+    /// Spec: TC-SAF-001
+    /// Unpack aborts when destination is non-empty.
     #[test]
     fn unpack_aborts_when_dest_not_empty() {
         let source_dir = tempfile::tempdir().unwrap();

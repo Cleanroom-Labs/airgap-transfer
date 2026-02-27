@@ -7,6 +7,7 @@ use tempfile::tempdir;
 mod common;
 use common::cmd;
 
+/// Spec: TC-SAF-002
 /// Pack with non-existent source produces an error.
 #[test]
 fn pack_missing_source() {
@@ -23,6 +24,7 @@ fn pack_missing_source() {
         .stderr(predicate::str::contains("does not exist"));
 }
 
+/// Spec: TC-TRANSFER-ERR-002
 /// Unpack with missing chunk files produces an error.
 #[test]
 fn unpack_missing_chunks() {
@@ -57,6 +59,7 @@ fn unpack_missing_chunks() {
         .stderr(predicate::str::contains("not found"));
 }
 
+/// Spec: TC-INT-003
 /// Unpack with corrupted chunk produces a checksum error.
 #[test]
 fn unpack_corrupted_chunk() {
@@ -90,6 +93,7 @@ fn unpack_corrupted_chunk() {
         .stderr(predicate::str::contains("checksum"));
 }
 
+/// Spec: TC-SAF-001
 /// Pack over existing manifest without --force produces an error.
 #[test]
 fn pack_overwrite_protection() {
@@ -120,6 +124,7 @@ fn pack_overwrite_protection() {
         .stderr(predicate::str::contains("--force"));
 }
 
+/// Spec: TC-SAF-005
 /// Pack over existing manifest with --force succeeds.
 #[test]
 fn pack_force_overwrite() {
@@ -150,6 +155,7 @@ fn pack_force_overwrite() {
         .success();
 }
 
+/// Spec: TC-SAF-001
 /// Unpack into non-empty directory without --force produces an error.
 #[test]
 fn unpack_nonempty_dest_protection() {
@@ -183,6 +189,7 @@ fn unpack_nonempty_dest_protection() {
         .stderr(predicate::str::contains("--force"));
 }
 
+/// Spec: TC-TRANSFER-CLI-005
 /// Unpack with --no-verify skips checksum validation.
 #[test]
 fn unpack_no_verify_skips_checksums() {
@@ -214,6 +221,7 @@ fn unpack_no_verify_skips_checksums() {
         .stdout(predicate::str::contains("Verifying").not());
 }
 
+/// Spec: TC-UNP-006
 /// Unpack with --keep-chunks preserves chunk files.
 #[test]
 fn unpack_keep_chunks() {

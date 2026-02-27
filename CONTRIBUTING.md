@@ -30,7 +30,30 @@ trivy fs .                      # Informational: scan for NVD/GHSA vulnerabiliti
 
 ---
 
-## 3. CI/CD Overview
+## 3. Building Documentation Locally
+
+The project documentation (specifications, traceability dashboard, implementation mapping) is built with Sphinx and deployed to GitHub Pages by CI. You can also build it locally.
+
+**Prerequisites:** Python 3 and pip. Rust nightly is only needed if you want test results in the dashboard.
+
+```bash
+git submodule update --init --recursive   # Initialize docs submodules
+pip install -r docs/requirements.txt      # Install Sphinx + extensions
+make -C docs html                         # Build → docs/_build/html/
+open docs/_build/html/index.html          # View locally
+```
+
+To include live test results in the dashboard:
+
+```bash
+make -C docs full
+```
+
+Both `docs/test-mapping.json` and `docs/source/_data/test-results.json` are gitignored — CI generates them fresh on each deploy. The test mapping is extracted from `/// Spec: TC-XXX` annotations on test functions. The docs build succeeds without either file; the dashboard will show specification data but no test pass/fail results.
+
+---
+
+## 4. CI/CD Overview
 
 | Workflow | Trigger | Jobs | Purpose |
 |---|---|---|---|
@@ -44,7 +67,7 @@ The CI pipeline takes a defense-in-depth approach to supply-chain security. Each
 
 ---
 
-## 4. Vulnerability Coverage Matrix
+## 5. Vulnerability Coverage Matrix
 
 | Tool | Database / Source | What It Catches |
 |---|---|---|
@@ -57,7 +80,7 @@ The CI pipeline takes a defense-in-depth approach to supply-chain security. Each
 
 ---
 
-## 5. Handling CI Failures
+## 6. Handling CI Failures
 
 **cargo-deny failure**
 
@@ -77,7 +100,7 @@ A dependency was added or updated and lacks trusted auditor coverage. Run `cargo
 
 The PR adds unsafe Rust code, increasing the expression count above the main branch baseline. Options:
 
-- If the unsafe code is justified (e.g., necessary FFI): merge the unsafe addition in a separate commit directly to main first, with a clear commit message explaining why it is safe. The new baseline is then established and subsequent PRs will pass. See [Adding Justified Unsafe Code](#7-adding-justified-unsafe-code).
+- If the unsafe code is justified (e.g., necessary FFI): merge the unsafe addition in a separate commit directly to main first, with a clear commit message explaining why it is safe. The new baseline is then established and subsequent PRs will pass. See [Adding Justified Unsafe Code](#8-adding-justified-unsafe-code).
 - If the unsafe code is not justified: remove it and use safe alternatives.
 
 **trivy MEDIUM/HIGH/CRITICAL (filesystem) or HIGH/CRITICAL (binary)**
@@ -93,7 +116,7 @@ Advisory only — this job has `continue-on-error: true` and never blocks merges
 
 ---
 
-## 6. Dependabot PRs
+## 7. Dependabot PRs
 
 When Dependabot opens a PR for a dependency update, the `dep-summary.yml` workflow runs and posts a Claude-generated summary comment on the PR. The summary covers:
 
@@ -109,7 +132,7 @@ For routine patch or minor updates with a clean CI run and no human-review flag:
 
 ---
 
-## 7. Adding Justified Unsafe Code
+## 8. Adding Justified Unsafe Code
 
 CI enforces that PRs do not increase the unsafe expression count versus the main branch baseline. Unsafe code cannot be introduced inside a regular PR — the geiger check will fail.
 
@@ -123,7 +146,7 @@ This policy ensures all unsafe code introductions are deliberate, isolated, and 
 
 ---
 
-## 8. Maintainer Setup
+## 9. Maintainer Setup
 
 The following one-time setup is required when deploying this project to a new GitHub
 repository for the `dep-summary.yml` workflow to function fully.
