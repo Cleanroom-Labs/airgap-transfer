@@ -25,7 +25,7 @@ jobs:
       - name: Parse changed dependencies
         run: |
           git diff origin/main -- Cargo.lock | grep '^[+-]' | grep 'name\|version' | \
-            grep -v '^---\|^+++' > lock_diff.txt
+            grep -v '^---\|^+++' > lock_diff.txt || true
           # Extract changed package names and versions
           git diff origin/main -- Cargo.lock | \
             awk '/^\+\[\[package\]\]/{found=1} found && /^name/{name=$3} found && /^version/{print name, $3; found=0}' \
