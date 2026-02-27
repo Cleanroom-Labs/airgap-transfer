@@ -1,0 +1,147 @@
+name: CI
+
+on:
+  push:
+    branches: ["main"]
+  pull_request:
+    branches: ["main"]
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  check:
+    name: Check (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+      - name: Build
+        run: cargo build --verbose
+      - name: Run tests
+        run: cargo test --verbose
+
+  lint:
+    name: Lint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: clippy, rustfmt
+      - uses: Swatinem/rust-cache@v2
+      - name: Clippy
+        run: cargo clippy -- -D warnings
+      - name: Format
+        run: cargo fmt --check
+
+  docs:
+    name: Docs build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.x'
+      - name: Install Sphinx dependencies
+        run: pip install -r docs/requirements.txt
+      - name: Build HTML docs
+        run: STANDALONE_DOCS=1 make -C docs html
+
+  deny:
+    name: License & advisory check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: EmbarkStudios/cargo-deny-action@v2
+
+  vet:
+    name: Dependency audit (cargo-vet)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+      - name: Install cargo-vet
+        uses: taiki-e/install-action@v2
+        with:
+          tool: cargo-vet
+      - name: Run cargo vet
+        run: cargo vet --locked
+
+  crev:
+    name: Community trust check (cargo-crev)
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+      - name: Install cargo-crev
+        run: cargo install --locked cargo-crev
+      - name: Fetch community reviews
+        run: cargo crev repo fetch all || true
+      - name: Verify dependencies
+        run: cargo crev crate verify || true
+
+  auditable:
+    name: Auditable build & binary audit
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+      - name: Install cargo-auditable and cargo-audit
+        uses: taiki-e/install-action@v2
+        with:
+          tool: cargo-auditable,cargo-audit
+      - name: Build auditable release binary
+        run: cargo auditable build --release
+      - name: Audit built binary
+        run: cargo audit bin target/release/airgap-transfer
+
+  geiger:
+    name: Unsafe code delta check (cargo-geiger)
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+      - name: Install cargo-geiger
+        uses: taiki-e/install-action@v2
+        with:
+          tool: cargo-geiger
+      - name: Run geiger on PR branch
+        run: cargo geiger --output-format Json 2>/dev/null | tee geiger-pr.json
+      - name: Checkout main branch as baseline
+        run: git fetch origin main && git worktree add ./baseline origin/main
+      - name: Run geiger on main branch
+        run: cd baseline && cargo geiger --output-format Json 2>/dev/null | tee ../geiger-main.json && cd ..
+      - name: Remove worktree
+        run: git worktree remove ./baseline
+      - name: Compare unsafe expression counts
+        run: |
+          PR_COUNT=$(jq '[.packages[].unsafety.used.exprs.unsafe_] | add // 0' geiger-pr.json)
+          MAIN_COUNT=$(jq '[.packages[].unsafety.used.exprs.unsafe_] | add // 0' geiger-main.json)
+          echo "PR unsafe expressions: $PR_COUNT"
+          echo "Main unsafe expressions: $MAIN_COUNT"
+          if [ "$PR_COUNT" -gt "$MAIN_COUNT" ]; then
+            echo "::error::Unsafe expression count increased from $MAIN_COUNT (main) to $PR_COUNT (PR). New unsafe code requires review."
+            exit 1
+          fi
+      - name: Write step summary
+        run: |
+          PR_COUNT=$(jq '[.packages[].unsafety.used.exprs.unsafe_] | add // 0' geiger-pr.json)
+          MAIN_COUNT=$(jq '[.packages[].unsafety.used.exprs.unsafe_] | add // 0' geiger-main.json)
+          echo "## cargo-geiger unsafe expression counts" >> $GITHUB_STEP_SUMMARY
+          echo "| Branch | Unsafe expressions |" >> $GITHUB_STEP_SUMMARY
+          echo "|--------|--------------------|" >> $GITHUB_STEP_SUMMARY
+          echo "| main   | $MAIN_COUNT |" >> $GITHUB_STEP_SUMMARY
+          echo "| PR     | $PR_COUNT |" >> $GITHUB_STEP_SUMMARY

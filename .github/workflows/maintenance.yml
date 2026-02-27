@@ -1,0 +1,206 @@
+name: Maintenance
+
+on:
+  schedule:
+    - cron: "0 12 1-7 * 3" # First Wednesday of each month, 12:00 UTC (6am CST)
+  workflow_dispatch:
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  guard:
+    name: Schedule guard (first Wednesday only)
+    runs-on: ubuntu-latest
+    outputs:
+      should_run: ${{ steps.check.outputs.should_run }}
+    steps:
+      - name: Check if first Wednesday
+        id: check
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ] || [ "$(date +%u)" = "3" ]; then
+            echo "should_run=true" >> $GITHUB_OUTPUT
+          else
+            echo "should_run=false" >> $GITHUB_OUTPUT
+            echo "Today is not Wednesday (day $(date +%u)) — skipping maintenance run."
+          fi
+
+  check:
+    name: Check (${{ matrix.os }})
+    needs: guard
+    if: needs.guard.outputs.should_run == 'true'
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+      - name: Build
+        run: cargo build --verbose
+      - name: Run tests
+        run: cargo test --verbose
+
+  lint:
+    name: Lint
+    needs: guard
+    if: needs.guard.outputs.should_run == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: clippy, rustfmt
+      - uses: Swatinem/rust-cache@v2
+      - name: Clippy
+        run: cargo clippy -- -D warnings
+      - name: Format
+        run: cargo fmt --check
+
+  outdated:
+    name: Outdated dependencies
+    needs: guard
+    if: needs.guard.outputs.should_run == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+      - name: Install cargo-outdated
+        uses: taiki-e/install-action@v2
+        with:
+          tool: cargo-outdated
+      - name: Check outdated dependencies
+        run: cargo outdated --depth 1 | tee -a $GITHUB_STEP_SUMMARY || true
+
+  duplicates:
+    name: Duplicate dependencies
+    needs: guard
+    if: needs.guard.outputs.should_run == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+      - name: Install cargo-duplicates
+        run: cargo install --locked cargo-duplicates
+      - name: Check duplicate dependencies
+        run: cargo duplicates | tee -a $GITHUB_STEP_SUMMARY || true
+
+  deny:
+    name: License & advisory check
+    needs: guard
+    if: needs.guard.outputs.should_run == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: EmbarkStudios/cargo-deny-action@v2
+
+  vet:
+    name: Dependency audit (cargo-vet)
+    needs: guard
+    if: needs.guard.outputs.should_run == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+      - name: Install cargo-vet
+        uses: taiki-e/install-action@v2
+        with:
+          tool: cargo-vet
+      - name: Run cargo vet
+        run: cargo vet --locked
+
+  crev:
+    name: Community trust check (cargo-crev)
+    needs: guard
+    if: needs.guard.outputs.should_run == 'true'
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+      - name: Install cargo-crev
+        run: cargo install --locked cargo-crev
+      - name: Fetch community reviews
+        run: cargo crev repo fetch all || true
+      - name: Verify dependencies
+        run: cargo crev crate verify || true
+
+  auditable:
+    name: Auditable build & binary audit
+    needs: guard
+    if: needs.guard.outputs.should_run == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+      - name: Install cargo-auditable and cargo-audit
+        uses: taiki-e/install-action@v2
+        with:
+          tool: cargo-auditable,cargo-audit
+      - name: Build auditable release binary
+        run: cargo auditable build --release
+      - name: Audit built binary
+        run: cargo audit bin target/release/airgap-transfer
+
+  trivy:
+    name: Vulnerability scan (Trivy)
+    needs: guard
+    if: needs.guard.outputs.should_run == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+      - name: Install cargo-auditable
+        uses: taiki-e/install-action@v2
+        with:
+          tool: cargo-auditable
+      - name: Build auditable release binary
+        run: cargo auditable build --release
+      - name: Scan filesystem for vulnerabilities
+        uses: aquasecurity/trivy-action@0.28.0
+        with:
+          scan-type: 'fs'
+          scan-ref: '.'
+          severity: 'CRITICAL,HIGH,MEDIUM'
+          exit-code: '1'
+      - name: Scan binary for vulnerabilities
+        uses: aquasecurity/trivy-action@0.28.0
+        with:
+          scan-type: 'fs'
+          scan-ref: 'target/release/airgap-transfer'
+          severity: 'CRITICAL,HIGH'
+          exit-code: '1'
+
+  geiger-baseline:
+    name: Geiger baseline snapshot
+    needs: guard
+    if: needs.guard.outputs.should_run == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+      - name: Install cargo-geiger
+        uses: taiki-e/install-action@v2
+        with:
+          tool: cargo-geiger
+      - name: Run geiger and capture baseline
+        run: cargo geiger --output-format Json 2>/dev/null > geiger-baseline.json
+      - name: Upload geiger baseline artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: geiger-baseline
+          path: geiger-baseline.json
+          overwrite: true
+      - name: Write step summary
+        run: |
+          COUNT=$(jq '[.packages[].unsafety.used.exprs.unsafe_] | add // 0' geiger-baseline.json)
+          echo "## cargo-geiger baseline (main)" >> $GITHUB_STEP_SUMMARY
+          echo "Unsafe expressions on main: **$COUNT**" >> $GITHUB_STEP_SUMMARY

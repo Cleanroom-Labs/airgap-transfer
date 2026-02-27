@@ -50,17 +50,23 @@ cargo vet                      # Verify all deps have trusted audits (requires: 
 cargo crev crate verify        # Community trust check (requires: cargo install cargo-crev)
 cargo auditable build --release # Release build with embedded dep metadata (requires: cargo install cargo-auditable)
 cargo audit bin target/release/airgap-transfer  # Scan built binary for advisories (requires: cargo install cargo-audit)
+cargo geiger                   # Audit unsafe code in dep tree
+trivy fs .                     # Scan for NVD/GHSA/OSV vulnerabilities (requires trivy installed)
 ```
 
 ### Supply-chain security
 
-Five tools provide layered dependency assurance:
+Seven tools provide layered dependency assurance:
 
 - **cargo-deny** (`deny.toml`) — Build-time gate: license allowlisting (AGPL-compatible only), RustSec advisory checks, source restrictions (crates.io only), duplicate version detection. CI runs on every push/PR and weekly for new advisories.
 - **cargo-vet** (`supply-chain/`) — Verifies dependencies have been reviewed by trusted auditors (Mozilla, Google). Centralized trust model. Blocking in CI. Uses exemptions for unaudited deps, which are gradually reduced as imported audit coverage grows.
 - **cargo-crev** — Decentralized community code reviews with cryptographic signatures. Web of trust model. Advisory in CI (non-blocking) due to sparse coverage.
 - **cargo-auditable** — Embeds a compressed dependency manifest (~4KB) into the compiled binary. Enables offline auditing of deployed binaries without source access.
 - **cargo-audit** — Scans Cargo.lock or compiled binaries (`cargo audit bin`) against RustSec advisories. Also offers `cargo audit fix` for auto-resolving advisories.
+- **cargo-geiger** — Counts unsafe code expressions in the full dependency tree. CI enforces a fail-on-increase policy on PRs: if a PR adds unsafe expressions compared to the main branch baseline, the geiger check fails. Run locally with `cargo geiger` for situational awareness before pushing.
+- **trivy** — Scans the auditable binary and project files against NVD (NIST), GitHub Security Advisories (GHSA), and OSV (which includes RustSec). Complements `cargo-audit`: cargo-audit covers RustSec advisories; trivy covers NVD and GHSA advisories that RustSec may not include. Both are required for full vulnerability coverage.
+
+**CI/CD workflows:** Three scheduled workflows handle different cadences — `ci.yml` (push/PR: all quality and supply-chain checks), `security.yml` (weekly Monday: advisory scans + Trivy + geiger baseline), `maintenance.yml` (monthly first Wednesday: build freshness + cargo-outdated + cargo-duplicates + all security jobs). A fourth workflow, `dep-summary.yml`, posts Claude-generated changelog summaries on Dependabot PRs. See `CONTRIBUTING.md` for the full CI/CD guide.
 
 ## Code Quality Standards
 

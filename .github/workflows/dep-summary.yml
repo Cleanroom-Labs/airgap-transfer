@@ -1,0 +1,124 @@
+name: Dependency Update Summary
+
+on:
+  pull_request:
+    types: [opened, synchronize]
+
+permissions:
+  pull-requests: write
+  issues: write
+  contents: read
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  summarize:
+    name: Summarize dependency updates
+    runs-on: ubuntu-latest
+    if: github.actor == 'dependabot[bot]'
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Parse changed dependencies
+        run: |
+          git diff origin/main -- Cargo.lock | grep '^[+-]' | grep 'name\|version' | \
+            grep -v '^---\|^+++' > lock_diff.txt
+          # Extract changed package names and versions
+          git diff origin/main -- Cargo.lock | \
+            awk '/^\+\[\[package\]\]/{found=1} found && /^name/{name=$3} found && /^version/{print name, $3; found=0}' \
+            | tr -d '"' > changed_deps.txt
+          cat changed_deps.txt
+
+      - name: Generate dependency summary
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          CLAUDE_API_KEY: ${{ secrets.CLAUDE_API_KEY }}
+        run: |
+          set -e
+
+          # Read the project context
+          PROJECT_CONTEXT="airgap-transfer is a Rust CLI tool for transferring large files across air-gap boundaries using removable media (USB drives). It splits data into chunks, tracks state via a JSON manifest, and verifies integrity with SHA-256 checksums. Dependencies: chrono (timestamps), clap (CLI parsing), colored (terminal output), indicatif (progress bars), libc (OS syscalls for USB detection), serde/serde_json (JSON manifest), sha2 (checksums), tar (chunk format), thiserror (error types)."
+
+          SUMMARY=""
+          HUMAN_REVIEW_NEEDED=false
+
+          while IFS=' ' read -r pkg_name pkg_version; do
+            [ -z "$pkg_name" ] && continue
+
+            # Get old version from main branch
+            OLD_VERSION=$(git show origin/main:Cargo.lock 2>/dev/null | \
+              awk -v name="\"$pkg_name\"" '/^\[\[package\]\]/{found=0} $0 ~ "^name = " name {found=1} found && /^version/{print $3; exit}' | tr -d '"')
+
+            NEW_VERSION="$pkg_version"
+
+            [ "$OLD_VERSION" = "$NEW_VERSION" ] && continue
+            [ -z "$OLD_VERSION" ] && OLD_VERSION="(new)"
+
+            echo "Processing: $pkg_name $OLD_VERSION -> $NEW_VERSION"
+
+            # Fetch crate info from crates.io
+            CRATE_INFO=$(curl -sf "https://crates.io/api/v1/crates/$pkg_name" \
+              -H "User-Agent: airgap-transfer-dep-summary/1.0" 2>/dev/null || echo "{}")
+
+            REPO_URL=$(echo "$CRATE_INFO" | jq -r '.crate.repository // empty' 2>/dev/null || echo "")
+            DESCRIPTION=$(echo "$CRATE_INFO" | jq -r '.crate.description // "No description"' 2>/dev/null || echo "No description")
+
+            # Try to fetch CHANGELOG if repo is on GitHub
+            CHANGELOG=""
+            if echo "$REPO_URL" | grep -q "github.com"; then
+              OWNER_REPO=$(echo "$REPO_URL" | sed 's|https://github.com/||' | sed 's|/$||')
+              for fname in CHANGELOG.md CHANGELOG CHANGES.md; do
+                CHANGELOG=$(curl -sf "https://api.github.com/repos/$OWNER_REPO/contents/$fname" \
+                  -H "Authorization: token $GH_TOKEN" 2>/dev/null | \
+                  jq -r '.content // empty' 2>/dev/null | base64 -d 2>/dev/null | head -200 || echo "")
+                [ -n "$CHANGELOG" ] && break
+              done
+            fi
+
+            [ -z "$CHANGELOG" ] && CHANGELOG="No changelog available."
+
+            # Build Claude API request
+            PROMPT="Dependency: $pkg_name $OLD_VERSION -> $NEW_VERSION\nDescription: $DESCRIPTION\nChangelog excerpt:\n${CHANGELOG:0:3000}"
+
+            CLAUDE_RESPONSE=$(curl -sf "https://api.anthropic.com/v1/messages" \
+              -H "x-api-key: $CLAUDE_API_KEY" \
+              -H "anthropic-version: 2023-06-01" \
+              -H "content-type: application/json" \
+              -d "{
+                \"model\": \"claude-haiku-4-5-20251001\",
+                \"max_tokens\": 512,
+                \"system\": \"$PROJECT_CONTEXT Focus on: breaking API changes that affect this project, unsafe code additions or removals, security fixes, new features that could improve the project, and whether a developer must manually intervene before merging. Be concise (3-8 sentences). If the update requires a developer to review before merging (e.g., major version bump, breaking API change, significant unsafe code addition), start your response with HUMAN REVIEW REQUIRED in bold.\",
+                \"messages\": [{\"role\": \"user\", \"content\": $(echo "$PROMPT" | jq -Rs .)}]
+              }" 2>/dev/null || echo "")
+
+            if [ -n "$CLAUDE_RESPONSE" ]; then
+              RESPONSE_TEXT=$(echo "$CLAUDE_RESPONSE" | jq -r '.content[0].text // "Analysis unavailable."' 2>/dev/null || echo "Analysis unavailable.")
+            else
+              RESPONSE_TEXT="Analysis unavailable (Claude API call failed)."
+            fi
+
+            if echo "$RESPONSE_TEXT" | grep -qi "HUMAN REVIEW REQUIRED"; then
+              HUMAN_REVIEW_NEEDED=true
+            fi
+
+            SUMMARY="${SUMMARY}\n\n### $pkg_name: $OLD_VERSION -> $NEW_VERSION\n$RESPONSE_TEXT"
+          done < changed_deps.txt
+
+          # Post PR comment
+          if [ -n "$SUMMARY" ]; then
+            COMMENT_BODY="## Dependency Update Summary\n\n*Generated by Claude (claude-haiku-4-5-20251001)*\n$SUMMARY"
+            gh pr comment "$PR_NUMBER" --body "$(printf "$COMMENT_BODY")"
+          fi
+
+          # Create issue and add label if human review needed
+          if [ "$HUMAN_REVIEW_NEEDED" = true ]; then
+            ISSUE_TITLE="Dependency update requires human review (PR #$PR_NUMBER)"
+            gh issue create --title "$ISSUE_TITLE" \
+              --body "One or more dependency updates in PR #$PR_NUMBER require human review before merging. See the PR for details." \
+              --label "needs-human-review" || true
+            gh pr edit "$PR_NUMBER" --add-label "needs-human-review" || true
+          fi
