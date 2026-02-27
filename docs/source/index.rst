@@ -10,7 +10,12 @@ AirGap Transfer Docs
    :maxdepth: 2
    :caption: Dashboard
 
-   dashboard/index
+   dashboard/proj-health
+   dashboard/usecase-trace
+   dashboard/req-coverage
+   dashboard/impl-status
+   dashboard/test-status
+   dashboard/coverage-gaps
 
 .. toctree::
    :maxdepth: 2
