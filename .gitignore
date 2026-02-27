@@ -7,3 +7,5 @@ docs/_build/
 docs/test-mapping.json
 docs/source/_data/test-results.json
 __pycache__/
+
+*.png
