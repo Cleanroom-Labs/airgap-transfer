@@ -1,5 +1,5 @@
-Dashboard
-=========
+Project Health
+==============
 
 At-a-glance project health.
 
@@ -38,12 +38,3 @@ At-a-glance project health.
    type in ['req', 'nfreq'] and release == 'v1.1'
    type in ['req', 'nfreq'] and release == 'v1.2'
 
-.. toctree::
-   :maxdepth: 1
-   :caption: Detailed Views
-
-   test-status
-   req-coverage
-   impl-status
-   usecase-trace
-   coverage-gaps
