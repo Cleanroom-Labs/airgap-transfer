@@ -7,7 +7,7 @@ CONVERT       = scripts/convert_test_results.py
 MAPPING       = test-mapping.json
 TEST_RESULTS  = source/_data/test-results.json
 
-.PHONY: html full test-results test-mapping clean serve
+.PHONY: html full test-results test-mapping clean serve install-playwright test-e2e test-e2e-only
 
 html:
 	$(SPHINXBUILD) -b html $(SOURCEDIR) $(BUILDDIR)/html -W
@@ -24,6 +24,15 @@ test-mapping:
 serve: html
 	@echo "Serving docs at http://localhost:8000"
 	python3 -m http.server 8000 --directory $(BUILDDIR)/html
+
+install-playwright:
+	python3 -m playwright install chromium
+
+test-e2e: html install-playwright
+	python3 -m pytest tests/ -v --browser chromium
+
+test-e2e-only: install-playwright
+	python3 -m pytest tests/ -v --browser chromium
 
 clean:
 	rm -rf $(BUILDDIR)

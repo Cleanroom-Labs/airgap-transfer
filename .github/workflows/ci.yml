@@ -44,7 +44,7 @@ jobs:
         run: cargo fmt --check
 
   docs:
-    name: Docs build
+    name: Docs build & E2E test
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
@@ -53,10 +53,16 @@ jobs:
       - uses: actions/setup-python@v6
         with:
           python-version: '3.x'
-      - name: Install Sphinx dependencies
-        run: pip install -r docs/spec-docs/requirements.txt
+      - name: Install system dependencies
+        run: sudo apt-get update && sudo apt-get install -y graphviz
+      - name: Install Python dependencies
+        run: pip install -r docs/requirements.txt
       - name: Build HTML docs
-        run: STANDALONE_DOCS=1 make -C docs/spec-docs html
+        run: make -C docs html
+      - name: Install Playwright browsers
+        run: python3 -m playwright install --with-deps chromium
+      - name: Run docs E2E tests
+        run: make -C docs test-e2e-only
 
   deny:
     name: License & advisory check

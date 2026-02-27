@@ -1,3 +1,8 @@
 # Inherit all spec-docs dependencies (sphinx, sphinx-needs, myst-parser, etc.)
 -r spec-docs/requirements.txt
 # sphinxcontrib-rust>=1.0  # Deferred: binary crate — see conf.py comment
+
+# E2E testing for rendered documentation
+pytest>=8.0
+playwright>=1.40
+pytest-playwright>=0.5
