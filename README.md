@@ -102,9 +102,11 @@ cargo clippy -- -D warnings    # Lint
 cargo fmt --check              # Format check
 ```
 
+See [CONTRIBUTING.md](CONTRIBUTING.md) for the full developer workflow, CI/CD guide, and instructions for handling CI failures.
+
 ### Supply-chain security
 
-Five tools provide layered dependency assurance:
+Seven tools provide layered dependency assurance:
 
 | Tool | Purpose | Install |
 |------|---------|---------|
@@ -113,6 +115,8 @@ Five tools provide layered dependency assurance:
 | [cargo-crev](https://github.com/crev-dev/cargo-crev) | Decentralized community code reviews with cryptographic signatures | `cargo install cargo-crev` |
 | [cargo-auditable](https://github.com/rust-secure-code/cargo-auditable) | Embeds dependency metadata in compiled binaries for offline auditing | `cargo install cargo-auditable` |
 | [cargo-audit](https://github.com/rustsec/rustsec) | Scans Cargo.lock or built binaries against RustSec advisories | `cargo install cargo-audit` |
+| [cargo-geiger](https://github.com/rust-secure-code/cargo-geiger) | Counts unsafe code in dep tree; CI enforces no new unsafe expressions on PRs | `cargo install cargo-geiger` |
+| [trivy](https://github.com/aquasecurity/trivy) | Scans binary for vulnerabilities against NVD, GHSA, and OSV/RustSec (complements cargo-audit) | see [aquasecurity/trivy](https://github.com/aquasecurity/trivy) |
 
 ```bash
 cargo deny check                                  # License, advisory, source, and ban checks
@@ -123,7 +127,7 @@ cargo auditable build --release                    # Release build with embedded
 cargo audit bin target/release/airgap-transfer     # Scan built binary for vulnerabilities
 ```
 
-Configuration lives in `deny.toml` (cargo-deny) and `supply-chain/` (cargo-vet). CI enforces cargo-deny and cargo-vet on every push/PR (with weekly advisory scans), runs cargo-crev as an advisory check, and builds an auditable release binary.
+Configuration lives in `deny.toml` (cargo-deny) and `supply-chain/` (cargo-vet). CI runs all supply-chain checks on every push/PR (`ci.yml`), scans for new advisories weekly (`security.yml`), and checks build freshness and dependency staleness monthly (`maintenance.yml`).
 
 ## License
 
