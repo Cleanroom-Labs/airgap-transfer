@@ -1,13 +1,11 @@
 /// Integration tests: resume capability for pack and unpack.
 use std::fs;
 
-use assert_cmd::Command;
 use predicates::prelude::*;
 use tempfile::tempdir;
 
-fn cmd() -> Command {
-    Command::cargo_bin("airgap-transfer").unwrap()
-}
+mod common;
+use common::cmd;
 
 /// Simulate interrupted pack by packing, deleting a chunk, then resuming.
 #[test]

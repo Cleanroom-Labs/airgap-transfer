@@ -1,13 +1,11 @@
 /// Integration tests: list command behavior.
 use std::fs;
 
-use assert_cmd::Command;
 use predicates::prelude::*;
 use tempfile::tempdir;
 
-fn cmd() -> Command {
-    Command::cargo_bin("airgap-transfer").unwrap()
-}
+mod common;
+use common::cmd;
 
 /// List after pack shows all chunks present.
 #[test]

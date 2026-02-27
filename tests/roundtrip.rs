@@ -1,13 +1,11 @@
 /// Integration tests: end-to-end pack → list → unpack → verify roundtrip.
 use std::fs;
 
-use assert_cmd::Command;
 use predicates::prelude::*;
 use tempfile::tempdir;
 
-fn cmd() -> Command {
-    Command::cargo_bin("airgap-transfer").unwrap()
-}
+mod common;
+use common::cmd;
 
 /// Helper: create a source file with known content.
 fn create_source_file(dir: &std::path::Path, name: &str, content: &[u8]) {
