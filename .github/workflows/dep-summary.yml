@@ -3,6 +3,7 @@ name: Dependency Update Summary
 on:
   pull_request:
     types: [opened, synchronize]
+  workflow_dispatch:
 
 permissions:
   pull-requests: write
