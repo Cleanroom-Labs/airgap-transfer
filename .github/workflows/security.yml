@@ -120,7 +120,7 @@ jobs:
       - name: Run geiger and capture baseline
         run: cargo geiger --output-format Json 2>/dev/null > geiger-baseline.json
       - name: Upload geiger baseline artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: geiger-baseline
           path: geiger-baseline.json
