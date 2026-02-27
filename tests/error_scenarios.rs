@@ -1,13 +1,11 @@
 /// Integration tests: error scenarios and safety checks.
 use std::fs;
 
-use assert_cmd::Command;
 use predicates::prelude::*;
 use tempfile::tempdir;
 
-fn cmd() -> Command {
-    Command::cargo_bin("airgap-transfer").unwrap()
-}
+mod common;
+use common::cmd;
 
 /// Pack with non-existent source produces an error.
 #[test]

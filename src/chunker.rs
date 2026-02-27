@@ -16,6 +16,25 @@ use crate::verifier::HashAlgorithm;
 /// Read buffer size (8 KiB) — keeps memory usage well under the 100 MB budget.
 const BUF_SIZE: usize = 8192;
 
+/// Immutable configuration for a pack operation.
+///
+/// Groups the static inputs to [`pack_to_chunks_with_callback`] so the
+/// function signature stays within a manageable size.
+pub struct PackConfig<'a> {
+    /// Source file or directory to pack.
+    pub source: &'a Path,
+    /// Destination directory where chunk files are written.
+    pub dest: &'a Path,
+    /// Maximum byte size of each chunk.
+    pub chunk_size: u64,
+    /// Hash algorithm used to compute per-chunk checksums.
+    pub algorithm: &'a dyn HashAlgorithm,
+    /// Index of the first chunk to write; chunks before this index are
+    /// simulated (sizes tracked) but not written to disk.  Pass `0` to
+    /// start from the beginning.
+    pub resume_from: usize,
+}
+
 /// Convenience wrapper — pack from the start with no per-chunk callback.
 ///
 /// Used by tests and simple callers that don't need resume or USB-swap
@@ -30,13 +49,15 @@ pub fn pack_to_chunks(
     progress: &TransferProgress,
 ) -> Result<()> {
     pack_to_chunks_with_callback(
-        source,
-        dest,
-        chunk_size,
-        algorithm,
+        &PackConfig {
+            source,
+            dest,
+            chunk_size,
+            algorithm,
+            resume_from: 0,
+        },
         manifest,
         progress,
-        0,
         |_, _| Ok(()),
     )
 }
@@ -56,50 +77,47 @@ pub fn pack_to_chunks(
 /// `resume_from`) begins writing.  It receives the chunk index and
 /// destination path, and can be used to check available space, prompt for
 /// USB swapping, or save the manifest.
-#[allow(clippy::too_many_arguments)]
 pub fn pack_to_chunks_with_callback(
-    source: &Path,
-    dest: &Path,
-    chunk_size: u64,
-    algorithm: &dyn HashAlgorithm,
+    config: &PackConfig,
     manifest: &mut Manifest,
     progress: &TransferProgress,
-    resume_from: usize,
     mut on_chunk_start: impl FnMut(usize, &Path) -> Result<()>,
 ) -> Result<()> {
-    fs::create_dir_all(dest)?;
+    fs::create_dir_all(config.dest)?;
 
     // Collect the list of files to pack (single file or directory walk).
-    let entries = collect_entries(source)?;
+    let entries = collect_entries(config.source)?;
 
     // Track how many bytes have been written to the current chunk.
     let mut current_chunk_index: usize = 0;
     let mut current_chunk_bytes: u64 = 0;
-    let skipping = resume_from > 0;
+    let skipping = config.resume_from > 0;
 
     // Only open file/hasher when we're writing (not skipping)
     let mut hasher: Option<Box<dyn crate::verifier::HashWriter>> = None;
     let mut chunk_file: Option<fs::File> = None;
 
-    if current_chunk_index >= resume_from {
-        on_chunk_start(current_chunk_index, dest)?;
+    if current_chunk_index >= config.resume_from {
+        on_chunk_start(current_chunk_index, config.dest)?;
         // Delete partial chunk file if present
-        let chunk_path = dest.join(&manifest.chunks[current_chunk_index].filename);
+        let chunk_path = config
+            .dest
+            .join(&manifest.chunks[current_chunk_index].filename);
         let _ = fs::remove_file(&chunk_path);
         chunk_file = Some(fs::File::create(&chunk_path)?);
-        hasher = Some(algorithm.create_writer());
+        hasher = Some(config.algorithm.create_writer());
         manifest.update_chunk(current_chunk_index, ChunkStatus::InProgress, 0, "");
     }
 
     for entry_path in &entries {
         let relative = entry_path
-            .strip_prefix(source.parent().unwrap_or(source))
+            .strip_prefix(config.source.parent().unwrap_or(config.source))
             .unwrap_or(entry_path);
 
         let metadata = fs::metadata(entry_path)?;
         let file_size = metadata.len();
 
-        if current_chunk_index < resume_from {
+        if current_chunk_index < config.resume_from {
             // Simulate: track sizes without writing
             let header_size = 512u64; // tar header is always 512 bytes
             current_chunk_bytes += header_size;
@@ -151,8 +169,10 @@ pub fn pack_to_chunks_with_callback(
 
         // Check if we should start a new chunk (if we've exceeded the target size
         // and there are more files to write)
-        if current_chunk_bytes >= chunk_size && current_chunk_index + 1 < manifest.chunk_count {
-            if current_chunk_index >= resume_from {
+        if current_chunk_bytes >= config.chunk_size
+            && current_chunk_index + 1 < manifest.chunk_count
+        {
+            if current_chunk_index >= config.resume_from {
                 // Finalize current chunk with two 512-byte zero blocks (tar EOF)
                 let eof_block = [0u8; 1024];
                 write_to_chunk(
@@ -185,20 +205,22 @@ pub fn pack_to_chunks_with_callback(
             current_chunk_index += 1;
             current_chunk_bytes = 0;
 
-            if current_chunk_index >= resume_from {
-                on_chunk_start(current_chunk_index, dest)?;
+            if current_chunk_index >= config.resume_from {
+                on_chunk_start(current_chunk_index, config.dest)?;
                 // Delete partial chunk file if present
-                let next_path = dest.join(&manifest.chunks[current_chunk_index].filename);
+                let next_path = config
+                    .dest
+                    .join(&manifest.chunks[current_chunk_index].filename);
                 let _ = fs::remove_file(&next_path);
                 chunk_file = Some(fs::File::create(&next_path)?);
-                hasher = Some(algorithm.create_writer());
+                hasher = Some(config.algorithm.create_writer());
                 manifest.update_chunk(current_chunk_index, ChunkStatus::InProgress, 0, "");
             }
         }
     }
 
     // Finalize the last chunk
-    if current_chunk_index >= resume_from {
+    if current_chunk_index >= config.resume_from {
         let eof_block = [0u8; 1024];
         write_to_chunk(
             &eof_block,
