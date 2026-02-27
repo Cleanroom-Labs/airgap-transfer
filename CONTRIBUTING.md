@@ -120,3 +120,39 @@ To add justified unsafe code:
 3. After that commit lands on main it becomes the new geiger baseline. Subsequent PRs that do not add further unsafe code will pass the check.
 
 This policy ensures all unsafe code introductions are deliberate, isolated, and documented.
+
+---
+
+## 8. Maintainer Setup
+
+The following one-time setup is required when deploying this project to a new GitHub
+repository for the `dep-summary.yml` workflow to function fully.
+
+### CLAUDE_API_KEY secret
+
+The dependency update summary workflow calls the Anthropic Claude API directly. This
+requires an API key from [console.anthropic.com](https://console.anthropic.com) — a
+Claude Max or Pro subscription does not include API access; they are separate products
+with separate billing.
+
+**Recommended:** Create the secret at the **organization level** so all repos inherit
+it without per-repo configuration:
+
+1. Get a key from [console.anthropic.com](https://console.anthropic.com) → API Keys → Create Key
+2. GitHub **Organization** → Settings → Secrets and variables → Actions → **New organization secret**
+3. Name: `CLAUDE_API_KEY`, Repository access: **All repositories**
+
+Alternatively, add it per-repo: GitHub repo → Settings → Secrets and variables → Actions → New repository secret.
+
+Cost: `claude-haiku-4-5-20251001` at ~$0.001–0.003 per Dependabot PR is negligible.
+Without this secret the workflow still completes, but summaries show "Analysis unavailable."
+
+### `needs-human-review` label
+
+When Claude flags a dependency update as requiring human review, the workflow adds a
+`needs-human-review` label to the PR and creates a tracking issue. Create the label:
+
+GitHub repo → **Issues** → **Labels** → **New label** → Name: `needs-human-review`
+
+Without this label, the flag still appears in the PR comment, but label assignment and
+issue creation are silently skipped.
