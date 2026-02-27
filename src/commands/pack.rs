@@ -43,52 +43,8 @@ pub fn run(args: &PackArgs) -> Result<()> {
 
     // Check for existing manifest — handle resume vs overwrite vs abort
     let manifest_path = dest.join(MANIFEST_FILENAME);
-    let resume_from = if manifest_path.exists() {
-        if args.resume {
-            // Attempt to resume from existing manifest
-            let existing = Manifest::load(&manifest_path)?;
-            if !existing.is_compatible_pack(
-                &source.to_string_lossy(),
-                args.chunk_size,
-                &args.hash_algorithm,
-            ) {
-                return Err(AirgapError::UserAbort(
-                    "existing manifest is not compatible with current pack arguments. \
-                     Use --force to start fresh."
-                        .to_string(),
-                ));
-            }
-            match existing.first_incomplete_chunk() {
-                Some(idx) => {
-                    println!(
-                        "{} Resuming from chunk {} ({} of {} already complete)",
-                        "→".green().bold(),
-                        idx,
-                        idx,
-                        existing.chunk_count
-                    );
-                    idx
-                }
-                None => {
-                    println!(
-                        "{} All {} chunks already completed — nothing to resume.",
-                        "✓".green().bold(),
-                        existing.chunk_count
-                    );
-                    return Ok(());
-                }
-            }
-        } else if args.force {
-            0 // start fresh
-        } else {
-            return Err(AirgapError::UserAbort(
-                "destination already contains a manifest. \
-                 Use --force to overwrite or --resume to continue."
-                    .to_string(),
-            ));
-        }
-    } else {
-        0 // no existing manifest, start fresh
+    let Some(resume_from) = resolve_resume_index(&manifest_path, args)? else {
+        return Ok(());
     };
 
     // Check available space — if interactive (TTY), allow multi-USB prompting
@@ -135,13 +91,15 @@ pub fn run(args: &PackArgs) -> Result<()> {
     // Use callback-based packing for per-chunk space checks and manifest saves
     let chunk_size_for_check = args.chunk_size;
     chunker::pack_to_chunks_with_callback(
-        source,
-        dest,
-        args.chunk_size,
-        algorithm.as_ref(),
+        &chunker::PackConfig {
+            source,
+            dest,
+            chunk_size: args.chunk_size,
+            algorithm: algorithm.as_ref(),
+            resume_from,
+        },
         &mut manifest,
         &progress,
-        resume_from,
         |chunk_index, dest_path| {
             // Check space before each chunk
             let avail = usb::get_available_space(dest_path)?;
@@ -205,6 +163,60 @@ pub fn run(args: &PackArgs) -> Result<()> {
     );
 
     Ok(())
+}
+
+/// Determine the chunk index to resume from, or signal that the pack is already
+/// complete.
+///
+/// Returns `Ok(Some(idx))` to start writing from chunk `idx`, `Ok(None)` when
+/// all chunks are already done (caller should return `Ok(())`), or `Err` to
+/// abort with a user-visible message.
+fn resolve_resume_index(manifest_path: &Path, args: &PackArgs) -> Result<Option<usize>> {
+    if !manifest_path.exists() {
+        return Ok(Some(0));
+    }
+    if args.resume {
+        let existing = Manifest::load(manifest_path)?;
+        if !existing.is_compatible_pack(
+            &args.source.to_string_lossy(),
+            args.chunk_size,
+            &args.hash_algorithm,
+        ) {
+            return Err(AirgapError::UserAbort(
+                "existing manifest is not compatible with current pack arguments. \
+                 Use --force to start fresh."
+                    .to_string(),
+            ));
+        }
+        match existing.first_incomplete_chunk() {
+            Some(idx) => {
+                println!(
+                    "{} Resuming from chunk {} ({} of {} already complete)",
+                    "→".green().bold(),
+                    idx,
+                    idx,
+                    existing.chunk_count
+                );
+                Ok(Some(idx))
+            }
+            None => {
+                println!(
+                    "{} All {} chunks already completed — nothing to resume.",
+                    "✓".green().bold(),
+                    existing.chunk_count
+                );
+                Ok(None)
+            }
+        }
+    } else if args.force {
+        Ok(Some(0))
+    } else {
+        Err(AirgapError::UserAbort(
+            "destination already contains a manifest. \
+             Use --force to overwrite or --resume to continue."
+                .to_string(),
+        ))
+    }
 }
 
 fn print_dry_run(source: &Path, dest: &Path, total_size: u64, chunk_size: u64, algorithm: &str) {
