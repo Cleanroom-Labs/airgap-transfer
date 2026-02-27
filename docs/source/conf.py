@@ -35,7 +35,7 @@ needs_types = make_needs_types('TRANSFER-')
 
 # Paths relative to docs/source/ → sibling spec-docs/common/
 html_static_path = ['../spec-docs/common/sphinx/_static', '_static']
-templates_path = ['../spec-docs/source/_templates', '../spec-docs/common/sphinx/_templates']
+templates_path = ['../spec-docs/common/sphinx/_templates']
 html_favicon = '../spec-docs/common/sphinx/_static/favicon.ico'
 
 html_title = 'AirGap Transfer Docs'
@@ -47,4 +47,5 @@ html_context = {
     'conf_py_path': '/docs/source/',
 }
 setup_project_icon(project_name='AirGap Transfer', html_context_dict=html_context)
+setup_standalone_docs(project_name='AirGap Transfer', html_context_dict=html_context)
 setup_version_context(html_context)
