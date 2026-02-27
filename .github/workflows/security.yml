@@ -64,6 +64,8 @@ jobs:
   trivy:
     name: Vulnerability scan (Trivy)
     runs-on: ubuntu-latest
+    permissions:
+      security-events: write      # required for SARIF upload to GitHub Security tab
     steps:
       - uses: actions/checkout@v4
       - uses: dtolnay/rust-toolchain@stable
@@ -74,6 +76,21 @@ jobs:
           tool: cargo-auditable
       - name: Build auditable release binary
         run: cargo auditable build --release
+      # SARIF upload — all findings, no blocking, feeds GitHub Security tab
+      - name: Scan filesystem (SARIF)
+        uses: aquasecurity/trivy-action@0.28.0
+        with:
+          scan-type: 'fs'
+          scan-ref: '.'
+          format: 'sarif'
+          output: 'trivy-fs.sarif'
+          exit-code: '0'
+      - name: Upload filesystem SARIF
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: 'trivy-fs.sarif'
+          category: 'trivy-filesystem'
+      # Blocking scans — enforce severity policy
       - name: Scan filesystem for vulnerabilities
         uses: aquasecurity/trivy-action@0.28.0
         with:
