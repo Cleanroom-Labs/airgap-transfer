@@ -1,7 +1,4 @@
-[![CI](https://github.com/Cleanroom-Labs/airgap-transfer/actions/workflows/ci.yml/badge.svg)](https://github.com/Cleanroom-Labs/airgap-transfer/actions/workflows/ci.yml)
-[![Security](https://github.com/Cleanroom-Labs/airgap-transfer/actions/workflows/security.yml/badge.svg)](https://github.com/Cleanroom-Labs/airgap-transfer/actions/workflows/security.yml)
-[![Docs](https://github.com/Cleanroom-Labs/airgap-transfer/actions/workflows/static.yml/badge.svg)](https://github.com/Cleanroom-Labs/airgap-transfer/actions/workflows/static.yml)
-[![License: AGPL v3](https://img.shields.io/badge/License-AGPL%20v3-blue.svg)](https://www.gnu.org/licenses/agpl-3.0)
+[![CI](https://github.com/Cleanroom-Labs/airgap-transfer/actions/workflows/ci.yml/badge.svg)](https://github.com/Cleanroom-Labs/airgap-transfer/actions/workflows/ci.yml)&nbsp;&nbsp;[![Security](https://github.com/Cleanroom-Labs/airgap-transfer/actions/workflows/security.yml/badge.svg)](https://github.com/Cleanroom-Labs/airgap-transfer/actions/workflows/security.yml)&nbsp;&nbsp;[![Deploy static content to Pages](https://github.com/Cleanroom-Labs/airgap-transfer/actions/workflows/static.yml/badge.svg)](https://github.com/Cleanroom-Labs/airgap-transfer/actions/workflows/static.yml)&nbsp;&nbsp;[![License: AGPL v3](https://img.shields.io/badge/License-AGPL%20v3-blue.svg)](https://www.gnu.org/licenses/agpl-3.0)
 
 # AirGap Transfer
 
