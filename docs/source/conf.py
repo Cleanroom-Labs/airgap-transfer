@@ -44,5 +44,3 @@ html_context = {
 }
 setup_project_icon(project_name='AirGap Transfer', html_context_dict=html_context)
 setup_version_context(html_context)
-
-html_css_files = ['custom.css', 'dashboard.css']
