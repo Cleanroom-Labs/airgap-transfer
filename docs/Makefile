@@ -7,7 +7,7 @@ CONVERT       = scripts/convert_test_results.py
 MAPPING       = test-mapping.json
 TEST_RESULTS  = source/_data/test-results.json
 
-.PHONY: html full test-results test-mapping clean
+.PHONY: html full test-results test-mapping clean serve
 
 html:
 	$(SPHINXBUILD) -b html $(SOURCEDIR) $(BUILDDIR)/html -W
@@ -20,6 +20,10 @@ test-results: test-mapping
 
 test-mapping:
 	python3 $(EXTRACT) --src-dir ../src --test-dir ../tests --output $(MAPPING)
+
+serve: html
+	@echo "Serving docs at http://localhost:8000"
+	python3 -m http.server 8000 --directory $(BUILDDIR)/html
 
 clean:
 	rm -rf $(BUILDDIR)
