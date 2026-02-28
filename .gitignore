@@ -1,5 +1,6 @@
 /target
 .claude/settings.local.json
+.envrc
 .playwright-mcp/
 
 # Unified docs build artifacts
