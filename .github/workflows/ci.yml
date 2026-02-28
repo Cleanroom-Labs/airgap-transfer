@@ -58,7 +58,9 @@ jobs:
       - name: Install Python dependencies
         run: pip install -r docs/requirements.txt
       - name: Create test-results stub for docs build
-        run: echo '[]' > docs/source/_data/test-results.json
+        run: >
+          echo '{"project":"AirGap Transfer","created":"","current_version":"current","versions":{"current":{"created":"","needs":{}}}}'
+          > docs/source/_data/test-results.json
       - name: Build HTML docs
         run: make -C docs html
       - name: Install Playwright browsers
