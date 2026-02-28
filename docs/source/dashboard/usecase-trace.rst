@@ -49,16 +49,43 @@ UC-TRANSFER-004 — SBOM Transfer
    :show_link_names:
    :show_legend:
 
+UC-TRANSFER-005 — Verify Transfer Integrity
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. needflow::
+   :filter: id == 'UC-TRANSFER-005' or (type == 'req' and 'UC-TRANSFER-005' in links_back)
+   :link_types: links
+   :show_link_names:
+   :show_legend:
+
+UC-TRANSFER-006 — Recover from Transfer Failure
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. needflow::
+   :filter: id == 'UC-TRANSFER-006' or (type == 'req' and 'UC-TRANSFER-006' in links_back)
+   :link_types: links
+   :show_link_names:
+   :show_legend:
+
+UC-TRANSFER-007 — Protect Against Data Loss
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. needflow::
+   :filter: id == 'UC-TRANSFER-007' or (type == 'req' and 'UC-TRANSFER-007' in links_back)
+   :link_types: links
+   :show_link_names:
+   :show_legend:
+
 Requirements Without Use Case Coverage
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Functional requirements not referenced by any use case.  These are
-typically cross-cutting concerns (CLI flags, error handling, safety
-checks, deployment) or features covered by commands (``list``) that
-lack a dedicated use case.
+v1.0 functional requirements not referenced by any use case.  These are
+typically cross-cutting infrastructure (CLI command/flag definitions,
+deployment/build concerns) or verification details implicit in all
+operations.
 
 .. needtable::
-   :filter: type == 'req' and len(links_back) == 0
+   :filter: type == 'req' and len(links_back) == 0 and release == 'v1.0'
    :columns: id;title;status;tags;release
    :style: datatables
    :sort: id
