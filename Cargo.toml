@@ -5,6 +5,14 @@ edition = "2024"
 description = "Large file transfer utility for air-gapped environments"
 license = "AGPL-3.0-only"
 
+[lib]
+name = "airgap_transfer"
+path = "src/lib.rs"
+
+[[bin]]
+name = "airgap-transfer"
+path = "src/main.rs"
+
 [dependencies]
 chrono = { version = "0.4", features = ["serde"] }
 clap = { version = "4", features = ["derive"] }

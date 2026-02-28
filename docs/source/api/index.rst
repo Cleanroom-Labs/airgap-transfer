@@ -1,20 +1,27 @@
 API Reference
 =============
 
-.. note::
+The AirGap Transfer crate exposes its internal modules through a library
+target (``src/lib.rs``), enabling full API documentation via ``rustdoc``.
 
-   Auto-generated API documentation is deferred. AirGap Transfer is a
-   binary crate, so ``rustdoc`` and ``sphinxcontrib-rust`` only expose the
-   public CLI structs from ``main.rs`` — the internal modules (``chunker``,
-   ``verifier``, ``manifest``, ``usb``) are not visible.
+Generating API Docs
+-------------------
 
-   For module-level documentation, see the
-   :doc:`Implementation Mapping </implementation/index>` section, which
-   maps each Rust module to the requirements it implements.
+.. code-block:: bash
 
-   This page will be populated once the crate is restructured with a
-   ``lib.rs`` or ``sphinxcontrib-rust`` gains
-   ``--document-private-items`` support.
+   cargo doc --document-private-items --open
 
-In the meantime, ``cargo doc --document-private-items --open`` generates
-full API docs locally.
+This generates browsable HTML documentation for all public types, traits,
+and functions across every module:
+
+- **chunker** — Streaming chunk creation and reconstruction (tar format)
+- **commands** — Pack, unpack, and list command implementations
+- **error** — Error types (``AirgapError``) and result aliases
+- **manifest** — JSON manifest for metadata and state persistence
+- **progress** — Progress bar and byte formatting utilities
+- **prompt** — Interactive user prompts for USB swapping
+- **usb** — USB drive detection and capacity checks (platform-specific)
+- **verifier** — Pluggable hash verification (``HashAlgorithm`` trait)
+
+For the requirement-to-module traceability mapping, see the
+:doc:`Implementation Mapping </implementation/index>` section.
