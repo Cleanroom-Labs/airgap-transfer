@@ -21,8 +21,6 @@ Requirement → Implementation Flow
 .. needflow::
    :filter: type in ['req', 'impl']
    :link_types: implements
-   :show_link_names:
-   :show_legend:
 
 .. toctree::
    :maxdepth: 1

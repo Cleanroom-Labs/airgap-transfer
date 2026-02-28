@@ -19,8 +19,6 @@ UC-TRANSFER-001 — Large File Transfer
 .. needflow::
    :filter: id == 'UC-TRANSFER-001' or (type == 'req' and 'UC-TRANSFER-001' in links_back)
    :link_types: links
-   :show_link_names:
-   :show_legend:
 
 UC-TRANSFER-002 — Large Directory Transfer
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -28,8 +26,6 @@ UC-TRANSFER-002 — Large Directory Transfer
 .. needflow::
    :filter: id == 'UC-TRANSFER-002' or (type == 'req' and 'UC-TRANSFER-002' in links_back)
    :link_types: links
-   :show_link_names:
-   :show_legend:
 
 UC-TRANSFER-003 — Multi-USB Dataset Transfer
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -37,8 +33,6 @@ UC-TRANSFER-003 — Multi-USB Dataset Transfer
 .. needflow::
    :filter: id == 'UC-TRANSFER-003' or (type == 'req' and 'UC-TRANSFER-003' in links_back)
    :link_types: links
-   :show_link_names:
-   :show_legend:
 
 UC-TRANSFER-004 — SBOM Transfer
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -46,8 +40,6 @@ UC-TRANSFER-004 — SBOM Transfer
 .. needflow::
    :filter: id == 'UC-TRANSFER-004' or (type == 'req' and 'UC-TRANSFER-004' in links_back)
    :link_types: links
-   :show_link_names:
-   :show_legend:
 
 UC-TRANSFER-005 — Verify Transfer Integrity
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -55,8 +47,6 @@ UC-TRANSFER-005 — Verify Transfer Integrity
 .. needflow::
    :filter: id == 'UC-TRANSFER-005' or (type == 'req' and 'UC-TRANSFER-005' in links_back)
    :link_types: links
-   :show_link_names:
-   :show_legend:
 
 UC-TRANSFER-006 — Recover from Transfer Failure
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -64,8 +54,6 @@ UC-TRANSFER-006 — Recover from Transfer Failure
 .. needflow::
    :filter: id == 'UC-TRANSFER-006' or (type == 'req' and 'UC-TRANSFER-006' in links_back)
    :link_types: links
-   :show_link_names:
-   :show_legend:
 
 UC-TRANSFER-007 — Protect Against Data Loss
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -73,8 +61,6 @@ UC-TRANSFER-007 — Protect Against Data Loss
 .. needflow::
    :filter: id == 'UC-TRANSFER-007' or (type == 'req' and 'UC-TRANSFER-007' in links_back)
    :link_types: links
-   :show_link_names:
-   :show_legend:
 
 Requirements Without Use Case Coverage
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
