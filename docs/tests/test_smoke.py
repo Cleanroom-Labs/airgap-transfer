@@ -1,11 +1,14 @@
-"""Smoke tests: verify all major documentation pages load without errors."""
+"""Content smoke tests: verify project-specific pages load.
+
+Theme-generic smoke tests (console errors, basic page load) are in the
+common submodule's test suite.  This file tests only AirGap-specific pages.
+"""
 
 import re
 
 import pytest
 from playwright.sync_api import Page, expect
 
-# Pages that must exist in the full docs build.
 DASHBOARD_PAGES = [
     "dashboard/proj-health.html",
     "dashboard/usecase-trace.html",
@@ -67,20 +70,3 @@ def test_implementation_section_loads(page: Page, base_url: str) -> None:
     """Implementation section index page loads."""
     resp = page.goto(f"{base_url}/implementation/")
     assert resp is not None and resp.ok
-
-
-def test_no_console_errors_on_index(page: Page, base_url: str) -> None:
-    """Index page does not produce JavaScript console errors."""
-    errors: list[str] = []
-
-    def _on_console(msg):
-        if msg.type == "error":
-            text = msg.text
-            # Ignore resource-loading 404s (CDN fonts, external assets on localhost)
-            if "Failed to load resource" not in text:
-                errors.append(text)
-
-    page.on("console", _on_console)
-    page.goto(base_url)
-    page.wait_for_load_state("networkidle")
-    assert errors == [], f"Console errors: {errors}"
