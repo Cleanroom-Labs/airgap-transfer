@@ -42,6 +42,12 @@ Future-Release Requirements (v1.1+)
 Requirements scheduled beyond v1.0 that may not yet have tests or
 implementation.
 
+.. note::
+
+   The **is tested by** column is expected to be empty for future-release
+   requirements.  Test cases are authored per-release; v1.1 and v1.2 test
+   cases will be added when those releases enter active development.
+
 .. needtable::
    :filter: type in ['req', 'nfreq'] and release != 'v1.0'
    :columns: id;title;release;tests_back

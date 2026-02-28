@@ -1,6 +1,20 @@
 Test Status
 ===========
 
+Tests Requiring Attention
+-------------------------
+
+.. note::
+
+   Tests with status other than ``approved`` need review.
+   When CI results are available (via ``make full``), failures appear here.
+
+.. needtable::
+   :filter: type == 'test' and status != 'approved'
+   :columns: id;title;status;release;tests
+   :style: datatables
+   :sort: id
+
 All Test Cases
 --------------
 

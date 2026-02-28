@@ -1,26 +1,31 @@
 Implementation Status
 =====================
 
-.. note::
+Implementation Coverage
+-----------------------
 
-   Implementation mapping needs (``impl``) will be added in Phase 3. Once
-   added, this page will show which requirements are implemented and by
-   which Rust modules.
+.. needpie:: Requirement Implementation Coverage
+   :labels: Has Implementation, No Implementation
+   :legend:
+   :colors: #27ae60, #e74c3c
 
-Implementation Needs
---------------------
+   type == 'req' and len(implements_back) > 0
+   type == 'req' and len(implements_back) == 0
+
+Requirements Without Implementation
+------------------------------------
+
+Functional requirements that do not yet have an ``impl`` need linking to
+them.
 
 .. needtable::
-   :types: impl
-   :columns: id;title;status;release;implements
-   :style: datatables
+   :filter: type == 'req' and len(implements_back) == 0
+   :columns: id;title;status;release
+   :style: table
    :sort: id
 
-Requirement → Implementation Flow
-----------------------------------
+.. note::
 
-.. needflow::
-   :filter: type in ['req', 'impl']
-   :link_types: implements
-   :show_link_names:
-   :show_legend:
+   For the detailed implementation-to-requirement mapping, per-module
+   breakdowns, and flow diagrams, see
+   :doc:`Implementation Mapping </implementation/index>`.
