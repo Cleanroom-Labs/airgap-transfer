@@ -141,31 +141,40 @@ class TestAnchorScrollOffset:
 class TestContentBalance:
     """Document content is centered within the content area."""
 
+    VIEWPORTS = [
+        pytest.param(1440, id="1440px"),
+        pytest.param(1920, id="1920px"),
+    ]
+
+    @pytest.mark.parametrize("width", VIEWPORTS)
     def test_content_centered_with_sidebar(
-        self, page: Page, base_url: str
+        self, page: Page, base_url: str, width: int,
     ) -> None:
-        """With sidebar expanded, .document is horizontally centered."""
-        page.set_viewport_size({"width": 1440, "height": 900})
+        """With sidebar expanded, .document has equal whitespace on each side.
+
+        At 1920px the .wy-nav-content max-width (1200px) kicks in, so this
+        also verifies that .wy-nav-content itself is centered within the
+        content-wrap area.
+        """
+        page.set_viewport_size({"width": width, "height": 900})
         page.goto(base_url)
         page.wait_for_load_state("domcontentloaded")
 
-        margins = page.evaluate("""() => {
+        gaps = page.evaluate("""() => {
             const doc = document.querySelector('.document');
-            if (!doc) return null;
-            const rect = doc.getBoundingClientRect();
-            // Use .wy-nav-content as the reference parent — it is the
-            // content pane adjacent to the sidebar.
-            const parent = document.querySelector('.wy-nav-content');
-            if (!parent) return null;
-            const parentRect = parent.getBoundingClientRect();
+            const sidebar = document.querySelector('.wy-nav-side');
+            if (!doc || !sidebar) return null;
+            const docRect = doc.getBoundingClientRect();
+            const sidebarRight = sidebar.getBoundingClientRect().right;
             return {
-                leftMargin: rect.left - parentRect.left,
-                rightMargin: parentRect.right - rect.right,
+                leftGap: docRect.left - sidebarRight,
+                rightGap: window.innerWidth - docRect.right,
             };
         }""")
-        assert margins is not None, ".document or .wy-nav-content not found"
-        diff = abs(margins["leftMargin"] - margins["rightMargin"])
+        assert gaps is not None, ".document or .wy-nav-side not found"
+        diff = abs(gaps["leftGap"] - gaps["rightGap"])
         assert diff <= 30, (
-            f"Content not centered: left={margins['leftMargin']:.0f}px, "
-            f"right={margins['rightMargin']:.0f}px (diff={diff:.0f}px)"
+            f"Content not centered at {width}px: "
+            f"left gap={gaps['leftGap']:.0f}px, "
+            f"right gap={gaps['rightGap']:.0f}px (diff={diff:.0f}px)"
         )
