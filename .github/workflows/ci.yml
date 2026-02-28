@@ -57,6 +57,8 @@ jobs:
         run: sudo apt-get update && sudo apt-get install -y graphviz
       - name: Install Python dependencies
         run: pip install -r docs/requirements.txt
+      - name: Create test-results stub for docs build
+        run: echo '[]' > docs/source/_data/test-results.json
       - name: Build HTML docs
         run: make -C docs html
       - name: Install Playwright browsers
