@@ -9,8 +9,8 @@ Implementation Coverage
    :legend:
    :colors: #27ae60, #e74c3c
 
-   type == 'req' and len(implements_back) > 0
-   type == 'req' and len(implements_back) == 0
+   type == 'req' and len(realized_by) > 0
+   type == 'req' and len(realized_by) == 0
 
 Requirements Without Implementation
 ------------------------------------
@@ -18,10 +18,15 @@ Requirements Without Implementation
 Functional requirements that do not yet have an ``impl`` need linking to
 them.
 
+.. note::
+
+   Future-release requirements (v1.1+) are expected to appear here.
+   Implementation mapping is added per-release as development begins.
+
 .. needtable::
-   :filter: type == 'req' and len(implements_back) == 0
+   :filter: type == 'req' and len(realized_by) == 0 and release == 'v1.0'
    :columns: id;title;status;release
-   :style: table
+   :style: datatables
    :sort: id
 
 .. note::

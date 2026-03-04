@@ -9,7 +9,6 @@ persistence.
    :status: implemented
    :tags: manifest, json, metadata
    :release: v1.0
-   :implements: FR-TRANSFER-004
 
    ``Manifest::new`` creates a manifest tracking source path, chunk
    count, sizes, checksums, and algorithm. Serialized to
@@ -20,7 +19,6 @@ persistence.
    :status: implemented
    :tags: manifest, state, resume
    :release: v1.0
-   :implements: FR-TRANSFER-024, FR-TRANSFER-025
 
    ``update_chunk`` tracks per-chunk status (pending, in-progress,
    completed, failed). ``first_incomplete_chunk`` enables resume by
@@ -31,7 +29,6 @@ persistence.
    :status: implemented
    :tags: manifest, hash, algorithm
    :release: v1.0
-   :implements: FR-TRANSFER-046
 
    The ``hash_algorithm`` field in the manifest records which algorithm
    was used, so the unpack side uses the matching verifier.

@@ -11,8 +11,6 @@ from playwright.sync_api import Page, expect
 
 DASHBOARD_PAGES = [
     "dashboard/proj-health.html",
-    "dashboard/usecase-trace.html",
-    "dashboard/req-coverage.html",
     "dashboard/impl-status.html",
     "dashboard/test-status.html",
     "dashboard/coverage-gaps.html",
@@ -24,8 +22,13 @@ SPEC_PAGES = [
     "testing/plan.html",
 ]
 
-OTHER_PAGES = [
+PLANNING_PAGES = [
     "roadmap.html",
+    "requirements/future.html",
+    "testing/verification-plan.html",
+]
+
+OTHER_PAGES = [
     "readme.html",
 ]
 
@@ -52,9 +55,17 @@ def test_spec_page_loads(page: Page, base_url: str, path: str) -> None:
     expect(page.locator(".wy-nav-content")).to_be_visible()
 
 
+@pytest.mark.parametrize("path", PLANNING_PAGES, ids=lambda p: p.split("/")[-1])
+def test_planning_page_loads(page: Page, base_url: str, path: str) -> None:
+    """Each planning page returns 200 and has content."""
+    resp = page.goto(f"{base_url}/{path}")
+    assert resp is not None and resp.ok
+    expect(page.locator(".wy-nav-content")).to_be_visible()
+
+
 @pytest.mark.parametrize("path", OTHER_PAGES, ids=lambda p: p.split("/")[-1])
 def test_other_page_loads(page: Page, base_url: str, path: str) -> None:
-    """Roadmap, README, etc. return 200 and have content."""
+    """README and other standalone pages return 200 and have content."""
     resp = page.goto(f"{base_url}/{path}")
     assert resp is not None and resp.ok
     expect(page.locator(".wy-nav-content")).to_be_visible()

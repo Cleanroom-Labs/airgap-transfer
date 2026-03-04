@@ -16,6 +16,7 @@ from theme_config import *  # noqa: F401, F403
 # Local extensions (e.g. needpie layout fix)
 sys.path.insert(0, os.path.abspath('_ext'))
 extensions.append('needpie_fix')
+extensions.append('needflow_tree_fix')
 
 project = 'AirGap Transfer Docs'
 copyright = '2026, Cleanroom Labs'
@@ -25,6 +26,18 @@ release = get_docs_version()
 
 # Same needs_types as spec docs
 needs_types = make_needs_types('TRANSFER-')
+
+# Show only the ID in :need: role references (not title)
+needs_role_need_template = "{id}"
+
+# Top-to-bottom needflow layout for consistent graph rendering
+needs_graphviz_styles = {
+    "default": {
+        "graph": {"rankdir": "TB"},
+        "node": {"margin": "0.21,0.11"},
+        "edge": {"minlen": "2"},
+    },
+}
 
 # -- sphinxcontrib-rust: deferred -------------------------------------------
 # sphinxcontrib-rust only documents public items.  This is a binary crate so

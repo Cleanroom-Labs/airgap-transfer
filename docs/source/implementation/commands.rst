@@ -12,7 +12,6 @@ Pack Command
    :status: implemented
    :tags: pack, cli, command
    :release: v1.0
-   :implements: FR-TRANSFER-028
 
    ``pack::run`` orchestrates the pack workflow: argument validation,
    manifest creation, chunk size selection, space checking, progress
@@ -23,7 +22,6 @@ Pack Command
    :status: implemented
    :tags: pack, chunk-size
    :release: v1.0
-   :implements: FR-TRANSFER-006
 
    The ``--chunk-size`` flag accepts a human-readable size (e.g.,
    ``1G``, ``500M``) that overrides auto-detection.
@@ -33,7 +31,6 @@ Pack Command
    :status: implemented
    :tags: pack, progress, ux
    :release: v1.0
-   :implements: FR-TRANSFER-007
 
    Real-time progress bar via ``indicatif`` showing bytes written,
    transfer rate, and ETA.
@@ -43,7 +40,6 @@ Pack Command
    :status: implemented
    :tags: pack, usb, prompt
    :release: v1.0
-   :implements: FR-TRANSFER-008
 
    When available space is insufficient, the per-chunk callback
    prompts the user to swap USB drives before continuing.
@@ -53,7 +49,6 @@ Pack Command
    :status: implemented
    :tags: pack, safety
    :release: v1.0
-   :implements: FR-TRANSFER-038
 
    Existing manifest detection: refuses to overwrite without
    ``--force``, offers ``--resume`` for continuation.
@@ -66,7 +61,6 @@ Unpack Command
    :status: implemented
    :tags: unpack, cli, command
    :release: v1.0
-   :implements: FR-TRANSFER-029
 
    ``unpack::run`` orchestrates unpack: manifest loading, chunk
    verification, tar extraction, and final checksum validation.
@@ -76,7 +70,6 @@ Unpack Command
    :status: implemented
    :tags: unpack, validation
    :release: v1.0
-   :implements: FR-TRANSFER-012
 
    Before extraction, the manifest is loaded and each chunk file is
    checked for existence — missing chunks are reported.
@@ -86,7 +79,6 @@ Unpack Command
    :status: implemented
    :tags: unpack, resume
    :release: v1.0
-   :implements: FR-TRANSFER-013
 
    Unpack resumes from the first incomplete chunk by skipping already-
    extracted content.
@@ -96,7 +88,6 @@ Unpack Command
    :status: implemented
    :tags: unpack, cleanup
    :release: v1.0
-   :implements: FR-TRANSFER-014
 
    After successful extraction, chunks are deleted by default.
    ``--keep-chunks`` preserves them.
@@ -106,7 +97,6 @@ Unpack Command
    :status: implemented
    :tags: unpack, progress, ux
    :release: v1.0
-   :implements: FR-TRANSFER-015
 
    Progress bar shows extraction progress per chunk and overall.
 
@@ -118,7 +108,6 @@ List Command
    :status: implemented
    :tags: list, cli, command
    :release: v1.0
-   :implements: FR-TRANSFER-030
 
    ``list::run`` loads the manifest and displays chunk inventory in
    a formatted table.
@@ -128,7 +117,6 @@ List Command
    :status: implemented
    :tags: list, display
    :release: v1.0
-   :implements: FR-TRANSFER-016
 
    Shows all chunk filenames, sizes, and statuses from the manifest.
 
@@ -137,7 +125,6 @@ List Command
    :status: implemented
    :tags: list, display
    :release: v1.0
-   :implements: FR-TRANSFER-017
 
    Each chunk shows its byte size and completion status (pending,
    completed, failed).
@@ -147,7 +134,6 @@ List Command
    :status: implemented
    :tags: list, validation
    :release: v1.0
-   :implements: FR-TRANSFER-018
 
    Chunks not present on disk are flagged as missing in the output.
 
@@ -156,7 +142,6 @@ List Command
    :status: implemented
    :tags: list, display
    :release: v1.0
-   :implements: FR-TRANSFER-019
 
    Displays the total transfer size from the manifest header.
 
@@ -165,7 +150,6 @@ List Command
    :status: implemented
    :tags: list, verification
    :release: v1.0
-   :implements: FR-TRANSFER-057
 
    ``list --verify`` checks chunk checksums and reports integrity
    status alongside inventory.

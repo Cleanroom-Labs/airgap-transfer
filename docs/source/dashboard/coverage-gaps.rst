@@ -1,25 +1,30 @@
 Coverage Gaps
 =============
 
-This page identifies requirements and non-functional requirements that are
-missing test cases, implementation mapping, or both.
+v1.0 requirements and non-functional requirements that are missing test
+cases, implementation mapping, or both.
+
+.. note::
+
+   When all v1.0 requirements have full test and implementation coverage,
+   the tables below will be empty — this is the expected healthy state.
 
 Functional Requirements Without Tests
 --------------------------------------
 
 .. needtable::
-   :filter: type == 'req' and len(tests_back) == 0
+   :filter: type == 'req' and len(verified_by) == 0 and release == 'v1.0'
    :columns: id;title;status;release
-   :style: table
+   :style: datatables
    :sort: id
 
 Non-Functional Requirements Without Tests
 -------------------------------------------
 
 .. needtable::
-   :filter: type == 'nfreq' and len(tests_back) == 0
+   :filter: type == 'nfreq' and len(verified_by) == 0 and release == 'v1.0'
    :columns: id;title;status;release
-   :style: table
+   :style: datatables
    :sort: id
 
 Requirements Without Implementation Mapping
@@ -31,25 +36,7 @@ Requirements Without Implementation Mapping
    Phase 3.
 
 .. needtable::
-   :filter: type == 'req' and len(implements_back) == 0
+   :filter: type == 'req' and len(realized_by) == 0 and release == 'v1.0'
    :columns: id;title;status;release
-   :style: table
+   :style: datatables
    :sort: id
-
-Future-Release Requirements (v1.1+)
--------------------------------------
-
-Requirements scheduled beyond v1.0 that may not yet have tests or
-implementation.
-
-.. note::
-
-   The **is tested by** column is expected to be empty for future-release
-   requirements.  Test cases are authored per-release; v1.1 and v1.2 test
-   cases will be added when those releases enter active development.
-
-.. needtable::
-   :filter: type in ['req', 'nfreq'] and release != 'v1.0'
-   :columns: id;title;release;tests_back
-   :style: table
-   :sort: release

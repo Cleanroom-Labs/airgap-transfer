@@ -40,12 +40,13 @@ class TestNeedflowNavigation:
         self, page: Page, base_url: str
     ) -> None:
         """Click a known area in the UC-004 diagram (not CSS-scaled)."""
-        page.goto(f"{base_url}/dashboard/usecase-trace.html")
+        page.goto(f"{base_url}/use-cases/future.html")
         page.wait_for_load_state("networkidle")
 
-        # UC-004 (SBOM Transfer) is figure index 3, natural size 368x340.
-        # FR-TRANSFER-048 area: (5,228)-(183,334).  Center: (94, 281).
-        self._click_area_center(page, figure_index=3, nat_x=94, nat_y=281)
+        # UC-004 (SBOM Transfer) is the only needflow on this page (index 0).
+        # Natural size 368x340.
+        # FR-TRANSFER-048 area: (186,228)-(363,334).  Center: (274, 281).
+        self._click_area_center(page, figure_index=0, nat_x=274, nat_y=281)
 
         assert "FR-TRANSFER-048" in page.url, (
             f"Expected navigation to FR-TRANSFER-048, got: {page.url}"
@@ -54,13 +55,14 @@ class TestNeedflowNavigation:
     def test_wide_diagram_click_navigates(
         self, page: Page, base_url: str
     ) -> None:
-        """Click a known area in the UC-001 diagram (CSS-scaled from 1431px)."""
-        page.goto(f"{base_url}/dashboard/usecase-trace.html")
+        """Click a known area in the UC-001 diagram (CSS-scaled from 2216px)."""
+        page.goto(f"{base_url}/use-cases/use-case-large-file.html")
         page.wait_for_load_state("networkidle")
 
-        # UC-001 (Large File Transfer) is figure index 0, natural size 1431x302.
-        # FR-TRANSFER-001 area: (5,200)-(159,288).  Center: (82, 244).
-        self._click_area_center(page, figure_index=0, nat_x=82, nat_y=244)
+        # UC-001 (Large File Transfer) is the only needflow on this page (index 0).
+        # Natural size 1896x506.
+        # FR-TRANSFER-001 area: (1372,200)-(1525,288).  Center: (1448, 244).
+        self._click_area_center(page, figure_index=0, nat_x=1448, nat_y=244)
 
         assert "FR-TRANSFER-001" in page.url, (
             f"Expected navigation to FR-TRANSFER-001, got: {page.url}"

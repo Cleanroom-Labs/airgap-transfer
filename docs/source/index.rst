@@ -11,8 +11,6 @@ AirGap Transfer Docs
    :caption: Dashboard
 
    dashboard/proj-health
-   dashboard/usecase-trace
-   dashboard/req-coverage
    dashboard/impl-status
    dashboard/test-status
    dashboard/coverage-gaps
@@ -32,6 +30,10 @@ AirGap Transfer Docs
    :caption: Planning
 
    roadmap
+   use-cases/future
+   requirements/future
+   testing/future
+   testing/verification-plan
 
 .. toctree::
    :maxdepth: 2

@@ -22,18 +22,6 @@ def test_proj_health_pie_legends_visible(page: Page, base_url: str) -> None:
     expect(content).to_be_visible()
 
 
-def test_req_coverage_has_tables(page: Page, base_url: str) -> None:
-    """Requirement Coverage page has at least one needs table with data rows."""
-    page.goto(f"{base_url}/dashboard/req-coverage.html")
-    page.wait_for_load_state("networkidle")
-    # sphinx-needs renders tables; check for table rows
-    tables = page.locator("table")
-    assert tables.count() >= 1, "Expected at least one table on Requirement Coverage page"
-    # The first table should have at least one data row
-    rows = tables.first.locator("tbody tr")
-    assert rows.count() >= 1, "Expected at least one data row in the coverage table"
-
-
 def test_test_status_page_has_content(page: Page, base_url: str) -> None:
     """Test Status page loads with meaningful content."""
     page.goto(f"{base_url}/dashboard/test-status.html")
@@ -45,12 +33,14 @@ def test_test_status_page_has_content(page: Page, base_url: str) -> None:
     assert len(text) > 50, "Test Status page appears to have very little content"
 
 
-def test_impl_status_page_has_tables(page: Page, base_url: str) -> None:
-    """Implementation Status page has needs tables."""
+def test_impl_status_page_has_content(page: Page, base_url: str) -> None:
+    """Implementation Status page loads with meaningful content."""
     page.goto(f"{base_url}/dashboard/impl-status.html")
     page.wait_for_load_state("networkidle")
-    tables = page.locator("table")
-    assert tables.count() >= 1, "Expected at least one table on Implementation Status page"
+    content = page.locator(".wy-nav-content")
+    expect(content).to_be_visible()
+    text = content.inner_text()
+    assert len(text) > 50, "Implementation Status page appears to have very little content"
 
 
 def test_coverage_gaps_page_loads(page: Page, base_url: str) -> None:
@@ -61,3 +51,13 @@ def test_coverage_gaps_page_loads(page: Page, base_url: str) -> None:
     expect(content).to_be_visible()
     text = content.inner_text()
     assert len(text) > 50, "Coverage Gaps page appears to have very little content"
+
+
+def test_proj_health_has_coverage_tables(page: Page, base_url: str) -> None:
+    """Project Health page has specification coverage section."""
+    page.goto(f"{base_url}/dashboard/proj-health.html")
+    page.wait_for_load_state("networkidle")
+    text = page.locator(".wy-nav-content").inner_text()
+    assert "Specification Coverage" in text, (
+        "Expected 'Specification Coverage' section on Project Health page"
+    )

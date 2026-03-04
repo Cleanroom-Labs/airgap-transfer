@@ -18,16 +18,24 @@ At-a-glance project health.
    :legend:
    :colors: #27ae60, #e74c3c
 
-   type == 'req' and len(tests_back) > 0
-   type == 'req' and len(tests_back) == 0
+   type == 'req' and len(verified_by) > 0
+   type == 'req' and len(verified_by) == 0
 
 .. needpie:: NFR Test Coverage
    :labels: Has Tests, No Tests
    :legend:
    :colors: #27ae60, #e74c3c
 
-   type == 'nfreq' and len(tests_back) > 0
-   type == 'nfreq' and len(tests_back) == 0
+   type == 'nfreq' and len(verified_by) > 0
+   type == 'nfreq' and len(verified_by) == 0
+
+.. needpie:: v1.0 Requirement Test Coverage
+   :labels: Has Tests, No Tests
+   :legend:
+   :colors: #27ae60, #e74c3c
+
+   type == 'req' and release == 'v1.0' and len(verified_by) > 0
+   type == 'req' and release == 'v1.0' and len(verified_by) == 0
 
 .. needpie:: Requirements by Release
    :labels: v1.0, v1.1, v1.2
@@ -37,4 +45,41 @@ At-a-glance project health.
    type in ['req', 'nfreq'] and release == 'v1.0'
    type in ['req', 'nfreq'] and release == 'v1.1'
    type in ['req', 'nfreq'] and release == 'v1.2'
+
+Specification Coverage
+----------------------
+
+Requirements Without Use Case Coverage
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+v1.0 functional requirements not referenced by any use case.  These are
+typically cross-cutting infrastructure (CLI command/flag definitions,
+deployment/build concerns) or verification details implicit in all
+operations.
+
+.. needtable::
+   :filter: type == 'req' and len(links_back) == 0 and release == 'v1.0'
+   :columns: id;title;status;tags;release
+   :style: datatables
+   :sort: id
+
+Tests Without Requirement Links
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Test cases that do not link to any requirement via the ``:tests:`` field.
+
+.. needtable::
+   :filter: type == 'test' and len(tests) == 0 and "ci-result" not in tags
+   :columns: id;title;status;release
+   :style: datatables
+   :sort: id
+
+v1.0 Requirements Without Test Coverage
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. needtable::
+   :filter: type in ['req', 'nfreq'] and len(verified_by) == 0 and release == 'v1.0'
+   :columns: id;title;status;release
+   :style: datatables
+   :sort: id
 

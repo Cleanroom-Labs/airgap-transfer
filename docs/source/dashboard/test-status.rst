@@ -15,6 +15,21 @@ Tests Requiring Attention
    :style: datatables
    :sort: id
 
+Test Execution Results
+----------------------
+
+.. note::
+
+   This table is populated by ``make full``, which runs the Rust test
+   suite and imports results.  If the table is empty, the docs were built
+   with ``make html`` (no test execution).
+
+.. needtable::
+   :filter: type == 'test' and "ci-result" in tags
+   :columns: id;title;status;links
+   :style: datatables
+   :sort: id
+
 All Test Cases
 --------------
 
@@ -36,6 +51,10 @@ v1.0 Test Cases
 v1.1 Test Cases
 ---------------
 
+.. note::
+
+   Test cases for this release will be added when development begins.
+
 .. needtable::
    :filter: type == 'test' and release == 'v1.1'
    :columns: id;title;status;tests
@@ -44,6 +63,10 @@ v1.1 Test Cases
 
 v1.2 Test Cases
 ---------------
+
+.. note::
+
+   Test cases for this release will be added when development begins.
 
 .. needtable::
    :filter: type == 'test' and release == 'v1.2'
