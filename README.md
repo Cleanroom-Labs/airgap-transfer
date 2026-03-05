@@ -125,7 +125,7 @@ See [CONTRIBUTING.md](CONTRIBUTING.md) for the full developer workflow, CI/CD gu
 
 ### Supply-chain security
 
-Seven tools provide layered dependency assurance:
+Eight tools provide layered dependency and static-analysis assurance:
 
 | Tool | Purpose | Install |
 |------|---------|---------|
@@ -136,6 +136,7 @@ Seven tools provide layered dependency assurance:
 | [cargo-audit](https://github.com/rustsec/rustsec) | Scans Cargo.lock or built binaries against RustSec advisories | `cargo install cargo-audit` |
 | [cargo-geiger](https://github.com/rust-secure-code/cargo-geiger) | Counts unsafe code in dep tree; CI enforces no new unsafe expressions on PRs | `cargo install cargo-geiger` |
 | [trivy](https://github.com/aquasecurity/trivy) | Scans binary for vulnerabilities against NVD, GHSA, and OSV/RustSec (complements cargo-audit) | see [aquasecurity/trivy](https://github.com/aquasecurity/trivy) |
+| [semgrep](https://github.com/semgrep/semgrep) | Static application security testing (SAST) for source-level vulnerability patterns | `pip install semgrep` |
 
 ```bash
 cargo deny check                                  # License, advisory, source, and ban checks
@@ -144,9 +145,10 @@ cargo vet                                          # Verify all deps have truste
 cargo crev crate verify                            # Community trust check
 cargo auditable build --release                    # Release build with embedded dep manifest
 cargo audit bin target/release/airgap-transfer     # Scan built binary for vulnerabilities
+semgrep scan --config p/security-audit --error .   # Source-level SAST checks
 ```
 
-Configuration lives in `deny.toml` (cargo-deny) and `supply-chain/` (cargo-vet). CI runs all supply-chain checks on every push/PR (`ci.yml`), scans for new advisories weekly (`security.yml`), and checks build freshness and dependency staleness monthly (`maintenance.yml`).
+Configuration lives in `deny.toml` (cargo-deny) and `supply-chain/` (cargo-vet). CI runs all supply-chain and Semgrep checks on every push/PR (`ci.yml`), scans for new advisories weekly (`security.yml`), and checks build freshness and dependency staleness monthly (`maintenance.yml`).
 
 ## License
 
