@@ -167,14 +167,14 @@ jobs:
       - name: Build auditable release binary
         run: cargo auditable build --release
       - name: Scan filesystem for vulnerabilities
-        uses: aquasecurity/trivy-action@0.28.0
+        uses: aquasecurity/trivy-action@0.34.2
         with:
           scan-type: 'fs'
           scan-ref: '.'
           severity: 'CRITICAL,HIGH,MEDIUM'
           exit-code: '1'
       - name: Scan binary for vulnerabilities
-        uses: aquasecurity/trivy-action@0.28.0
+        uses: aquasecurity/trivy-action@0.34.2
         with:
           scan-type: 'fs'
           scan-ref: 'target/release/airgap-transfer'
