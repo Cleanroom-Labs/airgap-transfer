@@ -120,6 +120,19 @@ jobs:
       - name: Audit built binary
         run: cargo audit bin target/release/airgap-transfer
 
+  semgrep:
+    name: SAST scan (Semgrep)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.x'
+      - name: Install Semgrep
+        run: pip install semgrep
+      - name: Run Semgrep security rules
+        run: semgrep scan --config p/security-audit --error .
+
   geiger:
     name: Unsafe code delta check (cargo-geiger)
     runs-on: ubuntu-latest

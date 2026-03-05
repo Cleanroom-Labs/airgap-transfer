@@ -110,6 +110,31 @@ jobs:
           severity: 'CRITICAL,HIGH'
           exit-code: '1'
 
+  semgrep:
+    name: SAST scan (Semgrep)
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read              # required for checkout
+      security-events: write      # required for SARIF upload to GitHub Security tab
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.x'
+      - name: Install Semgrep
+        run: pip install semgrep
+      # SARIF upload — all findings, no blocking, feeds GitHub Security tab
+      - name: Scan source code (SARIF)
+        run: semgrep scan --config p/security-audit --sarif --output semgrep.sarif .
+      - name: Upload Semgrep SARIF
+        uses: github/codeql-action/upload-sarif@v4
+        with:
+          sarif_file: semgrep.sarif
+          category: semgrep-source
+      # Blocking scan — fail workflow when findings are detected
+      - name: Scan source code (blocking)
+        run: semgrep scan --config p/security-audit --error .
+
   geiger-baseline:
     name: Geiger baseline snapshot
     runs-on: ubuntu-latest

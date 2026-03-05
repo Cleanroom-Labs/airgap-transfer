@@ -1,0 +1,3 @@
+# Centralized Semgrep exclusions for local and CI scans.
+docs/_build/
+target/
