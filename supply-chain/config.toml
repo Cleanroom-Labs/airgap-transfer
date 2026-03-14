@@ -15,7 +15,7 @@ version = "1.1.4"
 criteria = "safe-to-run"
 
 [[exemptions.anstream]]
-version = "0.6.21"
+version = "1.0.0"
 criteria = "safe-to-deploy"
 
 [[exemptions.anstyle]]
@@ -23,7 +23,7 @@ version = "1.0.13"
 criteria = "safe-to-deploy"
 
 [[exemptions.anstyle-parse]]
-version = "0.2.7"
+version = "1.0.0"
 criteria = "safe-to-deploy"
 
 [[exemptions.anstyle-query]]
@@ -39,7 +39,7 @@ version = "1.0.102"
 criteria = "safe-to-run"
 
 [[exemptions.assert_cmd]]
-version = "2.1.2"
+version = "2.2.0"
 criteria = "safe-to-run"
 
 [[exemptions.autocfg]]
@@ -75,15 +75,15 @@ version = "0.4.44"
 criteria = "safe-to-deploy"
 
 [[exemptions.clap]]
-version = "4.5.60"
+version = "4.6.0"
 criteria = "safe-to-deploy"
 
 [[exemptions.clap_builder]]
-version = "4.5.60"
+version = "4.6.0"
 criteria = "safe-to-deploy"
 
 [[exemptions.clap_derive]]
-version = "4.5.55"
+version = "4.6.0"
 criteria = "safe-to-deploy"
 
 [[exemptions.clap_lex]]
@@ -195,7 +195,7 @@ version = "0.1.0"
 criteria = "safe-to-run"
 
 [[exemptions.libc]]
-version = "0.2.182"
+version = "0.2.183"
 criteria = "safe-to-deploy"
 
 [[exemptions.libredox]]
@@ -247,7 +247,7 @@ version = "1.0.106"
 criteria = "safe-to-deploy"
 
 [[exemptions.quote]]
-version = "1.0.44"
+version = "1.0.45"
 criteria = "safe-to-deploy"
 
 [[exemptions.r-efi]]
@@ -307,7 +307,7 @@ version = "0.4.44"
 criteria = "safe-to-deploy"
 
 [[exemptions.tempfile]]
-version = "3.26.0"
+version = "3.27.0"
 criteria = "safe-to-run"
 
 [[exemptions.termtree]]
