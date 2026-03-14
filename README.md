@@ -1,8 +1,16 @@
-[![Tests](https://img.shields.io/github/actions/workflow/status/Cleanroom-Labs/airgap-transfer/ci.yml?label=Tests)](https://github.com/Cleanroom-Labs/airgap-transfer/actions/workflows/ci.yml)&nbsp;&nbsp;[![Security](https://img.shields.io/github/actions/workflow/status/Cleanroom-Labs/airgap-transfer/security.yml?label=Security)](https://github.com/Cleanroom-Labs/airgap-transfer/actions/workflows/security.yml)&nbsp;&nbsp;[![Documentation](https://img.shields.io/github/actions/workflow/status/Cleanroom-Labs/airgap-transfer/static.yml?label=Documentation)](https://github.com/Cleanroom-Labs/airgap-transfer/actions/workflows/static.yml)&nbsp;&nbsp;[![License: AGPL v3](https://img.shields.io/badge/License-AGPL%20v3-blue.svg)](https://www.gnu.org/licenses/agpl-3.0)
+![AirGap Transfer](https://raw.githubusercontent.com/Cleanroom-Labs/cleanroom-website-common/main/assets/social_preview/transfer.png)
 
-# AirGap Transfer
+<p align="center">
+  <a href="https://github.com/Cleanroom-Labs/airgap-transfer/actions/workflows/ci.yml"><img src="https://github.com/Cleanroom-Labs/airgap-transfer/actions/workflows/ci.yml/badge.svg" alt="CI"></a>
+  &nbsp;&nbsp;
+  <a href="https://github.com/Cleanroom-Labs/airgap-transfer/actions/workflows/security.yml"><img src="https://github.com/Cleanroom-Labs/airgap-transfer/actions/workflows/security.yml/badge.svg" alt="Security"></a>
+  &nbsp;&nbsp;
+  <a href="https://github.com/Cleanroom-Labs/airgap-transfer/actions/workflows/static.yml"><img src="https://github.com/Cleanroom-Labs/airgap-transfer/actions/workflows/static.yml/badge.svg" alt="Docs"></a>
+  &nbsp;&nbsp;
+  <a href="https://www.gnu.org/licenses/agpl-3.0"><img src="https://img.shields.io/badge/License-AGPL%20v3-blue.svg" alt="License AGPL v3"></a>
+</p>
 
-A minimal command-line utility for safely transferring large files and datasets across air-gap boundaries using removable media.
+---
 
 ## Features
 
