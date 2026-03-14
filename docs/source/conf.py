@@ -18,7 +18,7 @@ sys.path.insert(0, os.path.abspath('_ext'))
 extensions.append('needpie_fix')
 extensions.append('needflow_tree_fix')
 
-project = 'AirGap Transfer Docs'
+project = 'AirGap Transfer'
 copyright = '2026, Cleanroom Labs'
 author = 'Cleanroom Labs'
 version = get_docs_version()
@@ -49,9 +49,9 @@ needs_graphviz_styles = {
 # Paths relative to docs/source/ → sibling spec-docs/common/
 html_static_path = ['../spec-docs/common/sphinx/_static', '_static']
 templates_path = ['../spec-docs/common/sphinx/_templates']
-html_favicon = '../spec-docs/common/sphinx/_static/favicon.ico'
+html_favicon = setup_project_favicon('AirGap Transfer', os.path.abspath('../spec-docs/common'))
 
-html_title = 'AirGap Transfer Docs'
+html_title = 'AirGap Transfer'
 html_context = {
     'display_github': True,
     'github_user': 'cleanroom-labs',
