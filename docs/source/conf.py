@@ -47,7 +47,11 @@ needs_graphviz_styles = {
 # module-level documentation in the meantime.
 
 # Paths relative to docs/source/ → sibling spec-docs/common/
-html_static_path = ['../spec-docs/common/sphinx/_static', '_static']
+html_static_path = [
+    '../spec-docs/common/sphinx/_static',
+    '../spec-docs/common/assets/favicons/transfer',
+    '_static',
+]
 templates_path = ['../spec-docs/common/sphinx/_templates']
 html_favicon = setup_project_favicon('AirGap Transfer', os.path.abspath('../spec-docs/common'))
 
