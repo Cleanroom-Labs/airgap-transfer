@@ -21,7 +21,7 @@ class TestNeedflowNavigation:
         assert response.ok, f"Failed to fetch page source: {page.url}"
         html = response.text()
 
-        for area_tag in re.findall(r"<area\\b[^>]*>", html, flags=re.IGNORECASE):
+        for area_tag in re.findall(r"<area\b[^>]*>", html, flags=re.IGNORECASE):
             href_match = re.search(
                 r'href="([^"]+)"', area_tag, flags=re.IGNORECASE
             )
