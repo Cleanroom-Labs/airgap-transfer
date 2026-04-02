@@ -82,7 +82,7 @@ jobs:
         run: cargo auditable build --release
       # SARIF upload — all findings, no blocking, feeds GitHub Security tab
       - name: Scan filesystem (SARIF)
-        uses: aquasecurity/trivy-action@0.34.2
+        uses: aquasecurity/trivy-action@0.35.0
         with:
           scan-type: 'fs'
           scan-ref: '.'
@@ -96,14 +96,14 @@ jobs:
           category: 'trivy-filesystem'
       # Blocking scans — enforce severity policy
       - name: Scan filesystem for vulnerabilities
-        uses: aquasecurity/trivy-action@0.34.2
+        uses: aquasecurity/trivy-action@0.35.0
         with:
           scan-type: 'fs'
           scan-ref: '.'
           severity: 'CRITICAL,HIGH,MEDIUM'
           exit-code: '1'
       - name: Scan binary for vulnerabilities
-        uses: aquasecurity/trivy-action@0.34.2
+        uses: aquasecurity/trivy-action@0.35.0
         with:
           scan-type: 'fs'
           scan-ref: 'target/release/airgap-transfer'
